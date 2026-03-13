@@ -11,10 +11,16 @@
 
 ### T1. Verify repo skeleton
 Owner: Both\
+**Status:** ✅ Done\
+**Depends on:** —\
+**Unlocks:** All subsequent tasks (foundational)\
 Output: All folders and empty files as specified in `PROJECT_ARCHITECTURE.md`, `uv sync` passes, VS Code Remote WSL opens cleanly.
 
 ### T2. Freeze mathematical specification
 Owner: Yash Karecha\
+**Status:** ✅ Done → `docs/math_spec.md`\
+**Depends on:** T1\
+**Unlocks:** T4, T7, T22, T23\
 Output: Equation sheet covering:
 
 - LASSO objective: $\min_\beta \frac{1}{2n}\|y - X\beta\|_2^2 + \lambda\|\beta\|_1$
@@ -29,6 +35,9 @@ Also write one short positioning note: IRL1 (Candès et al., 2008) is the founda
 
 ### T3. Build preprocessing pipeline
 Owner: Tenzin Kunga\
+**Status:** ✅ Done\
+**Depends on:** T1\
+**Unlocks:** T8, T9, T10, T12, T13, T14, T17\
 Output:
 - `src/data/load_data.py` — raw CSV loader
 - `src/data/preprocess.py` — missing values, one-hot encoding, standardization
@@ -42,6 +51,9 @@ Acceptance: One function call produces $X_{\text{train}}, X_{\text{val}}, X_{\te
 
 ### T4. Implement proximal utilities
 Owner: Yash Karecha\
+**Status:** ✅ Done\
+**Depends on:** T2 (math spec equations)\
+**Unlocks:** T5, T6, T10, T11\
 Files: `src/optim/objective.py`, `src/optim/prox_ops.py`, `src/optim/stopping.py`\
 Output:
 - `compute_loss(X, y, beta, lam, w)` — returns weighted objective value
@@ -53,18 +65,27 @@ Acceptance: Unit tests pass for edge cases — zero input, all-zero weights, max
 
 ### T5. Implement ISTA solver
 Owner: Yash Karecha\
+**Status:** ✅ Done\
+**Depends on:** T4 (`compute_loss`, `weighted_soft_threshold`, `has_converged`)\
+**Unlocks:** T10, T11, T13, T16, T19\
 File: `src/optim/ista.py`\
 Output: `ista_solve(X, y, lam, w, alpha, max_iter, tol)` → returns `(beta, objective_trace, sparsity_trace, runtime)`\
 Acceptance: On fixed-weight plain LASSO ($w_j = 1$), objective decreases monotonically. Solution matches scikit-learn `Lasso` within tolerance on a small synthetic problem.
 
 ### T6. Implement FISTA solver
 Owner: Yash Karecha\
+**Status:** ✅ Done\
+**Depends on:** T4 (`compute_loss`, `weighted_soft_threshold`, `has_converged`)\
+**Unlocks:** T10, T11, T13, T16, T19\
 File: `src/optim/fista.py`\
 Output: `fista_solve(X, y, lam, w, alpha, max_iter, tol)` → same signature as ISTA\
 Acceptance: Converges to same solution as ISTA in fewer iterations on fixed-weight problems. Momentum uses $t_{k+1} = (1 + \sqrt{1 + 4t_k^2})/2$.
 
 ### T7. Implement reweight engine
 Owner: Yash Karecha\
+**Status:** ✅ Done\
+**Depends on:** T2 (IRL1 weight formula)\
+**Unlocks:** T10, T11, T19\
 File: `src/optim/reweight.py`\
 Output:
 - `compute_weights(beta, gamma, eps)` — returns weight vector $w_j = 1/(|\beta_j| + \epsilon)^\gamma$
@@ -74,21 +95,33 @@ Acceptance: At $\beta = 0$, returns $w_j = 1/\epsilon^\gamma$ for all $j$. Weigh
 
 ### T8. Implement Ridge baseline
 Owner: Tenzin Kunga\
+**Status:** ✅ Done\
+**Depends on:** T3 (preprocessed data)\
+**Unlocks:** T10, T13, T14\
 File: `src/models/ridge.py`\
 Output: Ridge using `sklearn.linear_model.RidgeCV`; saves metrics and selected coefficients.
 
 ### T9. Implement LASSO baseline
 Owner: Tenzin Kunga\
+**Status:** ✅ Done\
+**Depends on:** T3 (preprocessed data)\
+**Unlocks:** T13, T14, T17, T18\
 File: `src/models/lasso.py`\
 Output: Standard LASSO using `sklearn.linear_model.LassoCV`; saves metrics and sparsity.
 
 ### T10. Implement static adaptive LASSO baseline
 Owner: Tenzin Kunga\
+**Status:** ⬜ Not started\
+**Depends on:** T3 (data), T5 or T6 (inner solver), T7 (weights), T8 (Ridge init)\
+**Unlocks:** T12, T13, T14, T16, T17, T18\
 File: `src/models/adaptive_lasso.py`\
 Output: Run Ridge to get $\hat\beta_\text{ridge}$; compute fixed weights $w_j = 1/(|\hat\beta_j| + \epsilon)^\gamma$; run ISTA/FISTA with those fixed weights; save metrics.
 
 ### T11. Implement dynamic reweighted LASSO
 Owner: Yash Karecha\
+**Status:** ⬜ Not started\
+**Depends on:** T5 (ISTA), T6 (FISTA), T7 (reweight engine)\
+**Unlocks:** T12, T13, T14, T16, T17, T18, T20\
 File: `src/models/dynamic_reweighted_lasso.py`\
 Output: Outer loop over IRL1 weight updates; calls ISTA or FISTA as inner solver per outer iteration; logs weight evolution, sparsity, and objective per outer step.
 
@@ -98,6 +131,9 @@ Output: Outer loop over IRL1 weight updates; calls ISTA or FISTA as inner solver
 
 ### T12. Run hyperparameter search
 Owner: Tenzin Kunga\
+**Status:** ⬜ Not started\
+**Depends on:** T3 (data), T10, T11\
+**Unlocks:** T13\
 File: `src/experiments/cross_validate.py`\
 Search over:
 - $\lambda \in [10^{-4},\; 1]$ (log scale)
@@ -109,11 +145,17 @@ Output: Best configs saved to `outputs/logs/best_configs.yaml`; all validation M
 
 ### T13. Run full experiment comparison
 Owner: Tenzin Kunga\
+**Status:** ⬜ Not started\
+**Depends on:** T8, T9, T10, T11, T12\
+**Unlocks:** T15, T20, T25\
 File: `src/experiments/run_baselines.py`, `src/experiments/run_dynamic.py`\
 Output: Comparison table with MSE, MAE, $\|\hat\beta\|_0$ (non-zeros), runtime, iterations for all five methods.
 
 ### T14. Support stability analysis
 Owner: Both\
+**Status:** ⬜ Not started\
+**Depends on:** T3 (splits/seeds), T8, T9, T10, T11\
+**Unlocks:** T25\
 File: `src/metrics/stability_metrics.py`\
 Output: For each method, compute Jaccard index of selected feature sets across 5 seeds or folds:\
 $J(A, B) = |A \cap B| / |A \cup B|$\
@@ -121,6 +163,9 @@ Acceptance: Stability table included in final outputs.
 
 ### T15. Fairness audit
 Owner: Both\
+**Status:** ⬜ Not started\
+**Depends on:** T13 (full comparison results)\
+**Unlocks:** T25, T26\
 Confirm these two comparisons are kept separate in the paper:
 1. **Accuracy comparison**: all methods including sklearn baselines, on test-set MSE/MAE.
 2. **Optimizer efficiency comparison**: only custom ISTA/FISTA variants, on matched iterations and wall-clock time.
@@ -133,16 +178,25 @@ No claim that a custom research prototype "beats" scikit-learn's production solv
 
 ### T16. Convergence plots
 Owner: Tenzin Kunga\
+**Status:** ⬜ Not started\
+**Depends on:** T5, T6, T11 (objective & sparsity traces)\
+**Unlocks:** T25\
 File: `src/visualization/convergence_plots.py`\
 Output: Objective value vs iteration for ISTA, FISTA, dynamic-ISTA, dynamic-FISTA on same axes. Sparsity ($\|\beta^k\|_0$) vs iteration subplot.
 
 ### T17. Sparsity–error tradeoff plot
 Owner: Tenzin Kunga\
+**Status:** ⬜ Not started\
+**Depends on:** T9, T10, T11, T12 (λ sweep results)\
+**Unlocks:** T25\
 File: `src/visualization/tradeoff_plots.py`\
 Output: Validation MSE vs number of non-zero features as $\lambda$ varies, for all sparse methods.
 
 ### T18. Coefficient path plot
 Owner: Tenzin Kunga\
+**Status:** ⬜ Not started\
+**Depends on:** T9, T10, T11 (coefficient vectors across λ)\
+**Unlocks:** T25\
 File: `src/visualization/coefficient_plots.py`\
 Output: Coefficient magnitude vs $\lambda$ for top 20 features; dynamic method vs static LASSO comparison.
 
@@ -152,10 +206,16 @@ Output: Coefficient magnitude vs $\lambda$ for top 20 features; dynamic method v
 
 ### T19. Synthetic correlated-design experiment
 Owner: Yash Karecha\
+**Status:** ⬜ Not started\
+**Depends on:** T5, T6, T7, T11\
+**Unlocks:** T25\
 Generate Toeplitz covariance data with known true support. Compare support recovery accuracy across methods. Demonstrates why $\ell_1$ fails under correlation and why reweighting helps.
 
 ### T20. Feature interpretation report
 Owner: Both\
+**Status:** ⬜ Not started\
+**Depends on:** T11, T13\
+**Unlocks:** T25\
 List top retained features from dynamic method. Provide domain interpretation for house pricing context. Include in paper's results discussion.
 
 ---
@@ -164,26 +224,44 @@ List top retained features from dynamic method. Provide domain interpretation fo
 
 ### T21. Introduction
 Owner: Tenzin Kunga\
+**Status:** ⬜ Not started\
+**Depends on:** — (can draft in parallel with code tasks)\
+**Unlocks:** paper draft\
 Must include: theme motivation, high-dimensional regression challenge, correlated feature problem, why sparse models matter.
 
 ### T22. Related Work
 Owner: Yash Karecha\
+**Status:** ⬜ Not started\
+**Depends on:** T2 (references locked in `docs/math_spec.md`)\
+**Unlocks:** paper draft\
 Must cite: LASSO (Tibshirani, 1996), adaptive LASSO (Zou, 2006), IRL1 (Candès et al., 2008), proximal gradient and ISTA/FISTA (Beck & Teboulle, 2009).
 
 ### T23. Methodology
 Owner: Yash Karecha\
+**Status:** ⬜ Not started\
+**Depends on:** T2, T4, T5, T6, T7 (implementations to describe)\
+**Unlocks:** paper draft\
 Must include: all equations from T2, algorithm pseudocode box, subdifferential connection, initialization and pruning mechanism explanation, FISTA acceleration, honest convergence scope statement.
 
 ### T24. Experiments section
 Owner: Tenzin Kunga\
+**Status:** ⬜ Not started\
+**Depends on:** T3, T8, T9, T10, T11, T12, T13\
+**Unlocks:** paper draft\
 Must include: dataset description, preprocessing protocol, all baselines, metrics, hyperparameter tuning strategy.
 
 ### T25. Results and Discussion
 Owner: Both\
+**Status:** ⬜ Not started\
+**Depends on:** T13, T14, T15, T16, T17, T18, T19, T20\
+**Unlocks:** T27\
 Must include: best comparison table, convergence figure, sparsity–error tradeoff figure, what worked, what failed, why.
 
 ### T26. Limitations section
 Owner: Both\
+**Status:** ⬜ Not started\
+**Depends on:** T25 (results must be known before limitations can be written)\
+**Unlocks:** T27\
 Must explicitly state:
 - Dynamic weights change the outer objective each iteration; no global convergence theorem is claimed.
 - Efficiency claims depend on fair matched-solver comparison.
@@ -192,6 +270,9 @@ Must explicitly state:
 
 ### T27. Final compliance pass
 Owner: Both\
+**Status:** ⬜ Not started\
+**Depends on:** T21, T22, T23, T24, T25, T26 (all paper sections)\
+**Unlocks:** paper submission\
 Checklist:
 - [ ] Every table and figure in the paper comes from `outputs/`.
 - [ ] Paper length is 6–12 pages.
