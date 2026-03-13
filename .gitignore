@@ -11,3 +11,6 @@ wheels/
 
 # Ruff-generated files
 .ruff_cache/
+
+# kaggle.json file
+kaggle.json
