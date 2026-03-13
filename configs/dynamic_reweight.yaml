@@ -1,0 +1,14 @@
+# Config for dynamic IRL1 reweighted LASSO (T11).
+# All hyperparameters consumed by run_dynamic_reweighted_lasso(); no magic numbers
+# in source code.
+#
+# Reference: Candès, Wakin, & Boyd (2008) — iteratively reweighted ℓ₁ minimisation.
+
+lam: 0.01            # regularisation strength λ
+gamma: 1.0           # IRL1 weight sharpness exponent γ  (sweep: 0.5, 1.0, 2.0 in T12)
+eps: 1.0e-3          # numerical stability constant ε    (sweep: 1e-3, 1e-4 in T12)
+w_max: 1000.0        # maximum allowed weight value (clip_weights upper bound)
+max_outer_iter: 10   # outer IRL1 loop iterations        (sweep: 5, 10, 20 in T12)
+inner_max_iter: 500  # inner (ISTA/FISTA) max iterations
+inner_tol: 1.0e-5    # inner relative-change tolerance
+solver: "fista"      # inner solver: "ista" or "fista"
