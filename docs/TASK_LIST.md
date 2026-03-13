@@ -206,14 +206,14 @@ Output: Coefficient magnitude vs $\lambda$ for top 20 features; dynamic method v
 
 ### T19. Synthetic correlated-design experiment
 Owner: Yash Karecha\
-**Status:** ⬜ Not started\
+**Status:** ✅ Done\
 **Depends on:** T5, T6, T7, T11\
 **Unlocks:** T25\
 Generate Toeplitz covariance data with known true support. Compare support recovery accuracy across methods. Demonstrates why $\ell_1$ fails under correlation and why reweighting helps.
 
 ### T20. Feature interpretation report
 Owner: Both\
-**Status:** ⬜ Not started\
+**Status:** ✅ Done\
 **Depends on:** T11, T13\
 **Unlocks:** T25\
 List top retained features from dynamic method. Provide domain interpretation for house pricing context. Include in paper's results discussion.
