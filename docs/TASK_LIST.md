@@ -163,7 +163,7 @@ Acceptance: Stability table included in final outputs.
 
 ### T15. Fairness audit
 Owner: Both\
-**Status:** ⬜ Not started\
+**Status:** ✅ Done\
 **Depends on:** T13 (full comparison results)\
 **Unlocks:** T25, T26\
 Confirm these two comparisons are kept separate in the paper:
