@@ -70,9 +70,37 @@ def _get_dynamic_cfg(best_configs: dict, solver: str) -> dict:
 	return best_configs[key]
 
 
+def _load_solver_cfg(path: str) -> dict:
+	"""Load a solver YAML config and return a dictionary."""
+	with open(path, "r", encoding="utf-8") as fh:
+		cfg = yaml.safe_load(fh)
+	if not isinstance(cfg, dict):
+		raise NotImplementedError(
+			f"Expected a mapping in solver config file: {path}"
+		)
+	return cfg
+
+
+def _solver_optim_params(
+	solver: str,
+	optim_cfg: dict,
+	ista_cfg: dict,
+	fista_cfg: dict,
+	X_train: np.ndarray,
+) -> tuple[float, int, float]:
+	"""Resolve alpha, max_iter, and tol for a given inner solver."""
+	solver_cfg = ista_cfg if solver == "ista" else fista_cfg
+	alpha = _resolve_alpha(X_train, solver_cfg.get("alpha", optim_cfg.get("alpha")))
+	max_iter = int(solver_cfg.get("max_iter", optim_cfg["max_iter"]))
+	tol = float(solver_cfg.get("tol", optim_cfg["tol"]))
+	return alpha, max_iter, tol
+
+
 def run_dynamic_experiments(
 	config_path: str = "configs/default.yaml",
 	dynamic_config_path: str = "configs/dynamic_reweight.yaml",
+	ista_config_path: str = "configs/ista.yaml",
+	fista_config_path: str = "configs/fista.yaml",
 	best_config_path: str | None = None,
 ) -> pd.DataFrame:
 	"""Run dynamic ISTA/FISTA and save dynamic-only plus full T13 comparison tables.
@@ -96,6 +124,8 @@ def run_dynamic_experiments(
 		cfg = yaml.safe_load(fh)
 	with open(dynamic_config_path, "r", encoding="utf-8") as fh:
 		dynamic_cfg = yaml.safe_load(fh)
+	ista_cfg = _load_solver_cfg(ista_config_path)
+	fista_cfg = _load_solver_cfg(fista_config_path)
 
 	data_cfg = cfg["data"]
 	outputs_cfg = cfg["outputs"]
@@ -125,11 +155,16 @@ def run_dynamic_experiments(
 		drop_cols=data_cfg.get("drop_cols"),
 	)
 
-	alpha = _resolve_alpha(X_train, optim_cfg.get("alpha"))
-
 	dynamic_rows: list[dict] = []
 	for best_row in [best_dyn_ista, best_dyn_fista]:
 		solver = str(best_row["solver"])
+		alpha, solver_max_iter, solver_tol = _solver_optim_params(
+			solver=solver,
+			optim_cfg=optim_cfg,
+			ista_cfg=ista_cfg,
+			fista_cfg=fista_cfg,
+			X_train=X_train,
+		)
 		(
 			beta_d,
 			_obj_d,
@@ -146,8 +181,8 @@ def run_dynamic_experiments(
 			w_max=float(dynamic_cfg["w_max"]),
 			alpha=alpha,
 			max_outer_iter=int(best_row["max_outer_iter"]),
-			inner_max_iter=int(dynamic_cfg["inner_max_iter"]),
-			inner_tol=float(dynamic_cfg["inner_tol"]),
+			inner_max_iter=int(dynamic_cfg.get("inner_max_iter", solver_max_iter)),
+			inner_tol=float(dynamic_cfg.get("inner_tol", solver_tol)),
 			solver=solver,
 		)
 		val_metrics = compute_regression_metrics(y_val, X_val @ beta_d)
@@ -188,6 +223,8 @@ def run_dynamic_experiments(
 			"task": "T13-run-dynamic",
 			"config_path": config_path,
 			"dynamic_config_path": dynamic_config_path,
+			"ista_config_path": ista_config_path,
+			"fista_config_path": fista_config_path,
 			"best_config_path": str(best_path.resolve()),
 			"dynamic_rows": dynamic_rows,
 			"dynamic_table_path": str(dynamic_table_path),
@@ -219,6 +256,18 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 		help="Path to dynamic reweight YAML config.",
 	)
 	parser.add_argument(
+		"--ista-config",
+		type=str,
+		default="configs/ista.yaml",
+		help="Path to ISTA YAML config.",
+	)
+	parser.add_argument(
+		"--fista-config",
+		type=str,
+		default="configs/fista.yaml",
+		help="Path to FISTA YAML config.",
+	)
+	parser.add_argument(
 		"--best-config",
 		type=str,
 		default=None,
@@ -233,6 +282,8 @@ def main(argv: list[str] | None = None) -> pd.DataFrame:
 	return run_dynamic_experiments(
 		config_path=args.config,
 		dynamic_config_path=args.dynamic_config,
+		ista_config_path=args.ista_config,
+		fista_config_path=args.fista_config,
 		best_config_path=args.best_config,
 	)
 

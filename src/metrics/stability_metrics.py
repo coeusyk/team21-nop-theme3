@@ -82,6 +82,32 @@ def _get_dynamic_cfg(best_configs: dict, solver: str) -> dict:
 	return best_configs[key]
 
 
+def _load_solver_cfg(path: str) -> dict:
+	"""Load a solver YAML config and return a dictionary."""
+	with open(path, "r", encoding="utf-8") as fh:
+		cfg = yaml.safe_load(fh)
+	if not isinstance(cfg, dict):
+		raise NotImplementedError(
+			f"Expected a mapping in solver config file: {path}"
+		)
+	return cfg
+
+
+def _solver_optim_params(
+	solver: str,
+	optim_cfg: dict,
+	ista_cfg: dict,
+	fista_cfg: dict,
+	X_train: np.ndarray,
+) -> tuple[float, int, float]:
+	"""Resolve alpha, max_iter, and tol for a given inner solver."""
+	solver_cfg = ista_cfg if solver == "ista" else fista_cfg
+	alpha = _resolve_alpha(X_train, solver_cfg.get("alpha", optim_cfg.get("alpha")))
+	max_iter = int(solver_cfg.get("max_iter", optim_cfg["max_iter"]))
+	tol = float(solver_cfg.get("tol", optim_cfg["tol"]))
+	return alpha, max_iter, tol
+
+
 def _support_set(beta: np.ndarray, tol: float) -> set[int]:
 	"""Return active-feature index set with |beta_j| > tol."""
 	return set(np.flatnonzero(np.abs(beta) > tol).tolist())
@@ -109,6 +135,8 @@ def _pairwise_jaccard(supports: list[set[int]]) -> list[float]:
 def run_stability_analysis(
 	config_path: str = "configs/default.yaml",
 	dynamic_config_path: str = "configs/dynamic_reweight.yaml",
+	ista_config_path: str = "configs/ista.yaml",
+	fista_config_path: str = "configs/fista.yaml",
 	best_config_path: str | None = None,
 ) -> pd.DataFrame:
 	"""Run T14 stability analysis across seeds and save stability table.
@@ -132,6 +160,8 @@ def run_stability_analysis(
 		cfg = yaml.safe_load(fh)
 	with open(dynamic_config_path, "r", encoding="utf-8") as fh:
 		dynamic_cfg = yaml.safe_load(fh)
+	ista_cfg = _load_solver_cfg(ista_config_path)
+	fista_cfg = _load_solver_cfg(fista_config_path)
 
 	data_cfg = cfg["data"]
 	outputs_cfg = cfg["outputs"]
@@ -186,7 +216,14 @@ def run_stability_analysis(
 		)
 		_ = X_val, X_test, y_val, y_test, feature_names
 
-		alpha = _resolve_alpha(X_train, optim_cfg.get("alpha"))
+		adaptive_solver = str(best_adaptive["solver"])
+		adaptive_alpha, adaptive_max_iter, adaptive_tol = _solver_optim_params(
+			solver=adaptive_solver,
+			optim_cfg=optim_cfg,
+			ista_cfg=ista_cfg,
+			fista_cfg=fista_cfg,
+			X_train=X_train,
+		)
 
 		ridge_results = run_ridge(
 			X_train=X_train,
@@ -225,13 +262,20 @@ def run_stability_analysis(
 			ridge_coef=np.asarray(ridge_results["beta"]),
 			gamma=float(best_adaptive["gamma"]),
 			eps=float(best_adaptive["eps"]),
-			alpha=alpha,
-			max_iter=int(optim_cfg["max_iter"]),
-			tol=float(optim_cfg["tol"]),
-			solver=str(best_adaptive["solver"]),
+			alpha=adaptive_alpha,
+			max_iter=adaptive_max_iter,
+			tol=adaptive_tol,
+			solver=adaptive_solver,
 		)
 		supports_by_method["adaptive_lasso"].append(_support_set(beta_a, nonzero_tol))
 
+		ista_alpha, ista_max_iter, ista_tol = _solver_optim_params(
+			solver="ista",
+			optim_cfg=optim_cfg,
+			ista_cfg=ista_cfg,
+			fista_cfg=fista_cfg,
+			X_train=X_train,
+		)
 		beta_di, _obj_di, _sp_di, _wt_di, _ic_di, _rt_di = run_dynamic_reweighted_lasso(
 			X=X_train,
 			y=y_train,
@@ -239,16 +283,23 @@ def run_stability_analysis(
 			gamma=float(best_dyn_ista["gamma"]),
 			eps=float(best_dyn_ista["eps"]),
 			w_max=float(dynamic_cfg["w_max"]),
-			alpha=alpha,
+			alpha=ista_alpha,
 			max_outer_iter=int(best_dyn_ista["max_outer_iter"]),
-			inner_max_iter=int(dynamic_cfg["inner_max_iter"]),
-			inner_tol=float(dynamic_cfg["inner_tol"]),
+			inner_max_iter=int(dynamic_cfg.get("inner_max_iter", ista_max_iter)),
+			inner_tol=float(dynamic_cfg.get("inner_tol", ista_tol)),
 			solver="ista",
 		)
 		supports_by_method["dynamic_reweighted_lasso_ista"].append(
 			_support_set(beta_di, nonzero_tol)
 		)
 
+		fista_alpha, fista_max_iter, fista_tol = _solver_optim_params(
+			solver="fista",
+			optim_cfg=optim_cfg,
+			ista_cfg=ista_cfg,
+			fista_cfg=fista_cfg,
+			X_train=X_train,
+		)
 		beta_df, _obj_df, _sp_df, _wt_df, _ic_df, _rt_df = run_dynamic_reweighted_lasso(
 			X=X_train,
 			y=y_train,
@@ -256,10 +307,10 @@ def run_stability_analysis(
 			gamma=float(best_dyn_fista["gamma"]),
 			eps=float(best_dyn_fista["eps"]),
 			w_max=float(dynamic_cfg["w_max"]),
-			alpha=alpha,
+			alpha=fista_alpha,
 			max_outer_iter=int(best_dyn_fista["max_outer_iter"]),
-			inner_max_iter=int(dynamic_cfg["inner_max_iter"]),
-			inner_tol=float(dynamic_cfg["inner_tol"]),
+			inner_max_iter=int(dynamic_cfg.get("inner_max_iter", fista_max_iter)),
+			inner_tol=float(dynamic_cfg.get("inner_tol", fista_tol)),
 			solver="fista",
 		)
 		supports_by_method["dynamic_reweighted_lasso_fista"].append(
@@ -295,6 +346,8 @@ def run_stability_analysis(
 			"task": "T14-stability-analysis",
 			"config_path": config_path,
 			"dynamic_config_path": dynamic_config_path,
+			"ista_config_path": ista_config_path,
+			"fista_config_path": fista_config_path,
 			"best_config_path": str(best_path.resolve()),
 			"seeds": seeds,
 			"nonzero_tol": nonzero_tol,
@@ -325,6 +378,18 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 		help="Path to dynamic reweight YAML config.",
 	)
 	parser.add_argument(
+		"--ista-config",
+		type=str,
+		default="configs/ista.yaml",
+		help="Path to ISTA YAML config.",
+	)
+	parser.add_argument(
+		"--fista-config",
+		type=str,
+		default="configs/fista.yaml",
+		help="Path to FISTA YAML config.",
+	)
+	parser.add_argument(
 		"--best-config",
 		type=str,
 		default=None,
@@ -339,6 +404,8 @@ def main(argv: list[str] | None = None) -> pd.DataFrame:
 	return run_stability_analysis(
 		config_path=args.config,
 		dynamic_config_path=args.dynamic_config,
+		ista_config_path=args.ista_config,
+		fista_config_path=args.fista_config,
 		best_config_path=args.best_config,
 	)
 

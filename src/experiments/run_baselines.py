@@ -72,9 +72,37 @@ def _select_best_adaptive_config(best_configs: dict) -> dict:
 	return min(candidates, key=lambda row: float(row["val_mse"]))
 
 
+def _load_solver_cfg(path: str) -> dict:
+	"""Load a solver YAML config and return a dictionary."""
+	with open(path, "r", encoding="utf-8") as fh:
+		cfg = yaml.safe_load(fh)
+	if not isinstance(cfg, dict):
+		raise NotImplementedError(
+			f"Expected a mapping in solver config file: {path}"
+		)
+	return cfg
+
+
+def _solver_optim_params(
+	solver: str,
+	optim_cfg: dict,
+	ista_cfg: dict,
+	fista_cfg: dict,
+	X_train: np.ndarray,
+) -> tuple[float, int, float]:
+	"""Resolve alpha, max_iter, and tol for a given inner solver."""
+	solver_cfg = ista_cfg if solver == "ista" else fista_cfg
+	alpha = _resolve_alpha(X_train, solver_cfg.get("alpha", optim_cfg.get("alpha")))
+	max_iter = int(solver_cfg.get("max_iter", optim_cfg["max_iter"]))
+	tol = float(solver_cfg.get("tol", optim_cfg["tol"]))
+	return alpha, max_iter, tol
+
+
 def run_baseline_experiments(
 	config_path: str = "configs/default.yaml",
 	dynamic_config_path: str = "configs/dynamic_reweight.yaml",
+	ista_config_path: str = "configs/ista.yaml",
+	fista_config_path: str = "configs/fista.yaml",
 	best_config_path: str | None = None,
 ) -> pd.DataFrame:
 	"""Run ridge, lasso, and static adaptive lasso and save baseline comparison table.
@@ -96,6 +124,8 @@ def run_baseline_experiments(
 	"""
 	with open(config_path, "r", encoding="utf-8") as fh:
 		cfg = yaml.safe_load(fh)
+	ista_cfg = _load_solver_cfg(ista_config_path)
+	fista_cfg = _load_solver_cfg(fista_config_path)
 	data_cfg = cfg["data"]
 	outputs_cfg = cfg["outputs"]
 	optim_cfg = cfg["optim"]
@@ -125,7 +155,14 @@ def run_baseline_experiments(
 		drop_cols=data_cfg.get("drop_cols"),
 	)
 
-	alpha = _resolve_alpha(X_train, optim_cfg.get("alpha"))
+	adaptive_solver = str(best_adaptive["solver"])
+	alpha, max_iter, tol = _solver_optim_params(
+		solver=adaptive_solver,
+		optim_cfg=optim_cfg,
+		ista_cfg=ista_cfg,
+		fista_cfg=fista_cfg,
+		X_train=X_train,
+	)
 
 	ridge_results = run_ridge(
 		X_train=X_train,
@@ -159,9 +196,9 @@ def run_baseline_experiments(
 		gamma=float(best_adaptive["gamma"]),
 		eps=float(best_adaptive["eps"]),
 		alpha=alpha,
-		max_iter=int(optim_cfg["max_iter"]),
-		tol=float(optim_cfg["tol"]),
-		solver=str(best_adaptive["solver"]),
+		max_iter=max_iter,
+		tol=tol,
+		solver=adaptive_solver,
 	)
 	val_metrics_a = compute_regression_metrics(y_val, X_val @ beta_a)
 	test_metrics_a = compute_regression_metrics(y_test, X_test @ beta_a)
@@ -212,6 +249,8 @@ def run_baseline_experiments(
 			"task": "T13-run-baselines",
 			"config_path": config_path,
 			"dynamic_config_path": dynamic_config_path,
+			"ista_config_path": ista_config_path,
+			"fista_config_path": fista_config_path,
 			"best_config_path": str(best_path.resolve()),
 			"adaptive_selected": best_adaptive,
 			"rows": rows,
@@ -241,6 +280,18 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 		help="Path to dynamic reweight YAML config.",
 	)
 	parser.add_argument(
+		"--ista-config",
+		type=str,
+		default="configs/ista.yaml",
+		help="Path to ISTA YAML config.",
+	)
+	parser.add_argument(
+		"--fista-config",
+		type=str,
+		default="configs/fista.yaml",
+		help="Path to FISTA YAML config.",
+	)
+	parser.add_argument(
 		"--best-config",
 		type=str,
 		default=None,
@@ -255,6 +306,8 @@ def main(argv: list[str] | None = None) -> pd.DataFrame:
 	return run_baseline_experiments(
 		config_path=args.config,
 		dynamic_config_path=args.dynamic_config,
+		ista_config_path=args.ista_config,
+		fista_config_path=args.fista_config,
 		best_config_path=args.best_config,
 	)
 
