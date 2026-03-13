@@ -177,7 +177,7 @@ No claim that a custom research prototype "beats" scikit-learn's production solv
 ## P1 — Visualization Tasks
 
 ### T16. Convergence plots
-Owner: Tenzin Kunga\
+Owner: Yash Karecha\
 **Status:** ⬜ Not started\
 **Depends on:** T5, T6, T11 (objective & sparsity traces)\
 **Unlocks:** T25\
@@ -185,7 +185,7 @@ File: `src/visualization/convergence_plots.py`\
 Output: Objective value vs iteration for ISTA, FISTA, dynamic-ISTA, dynamic-FISTA on same axes. Sparsity ($\|\beta^k\|_0$) vs iteration subplot.
 
 ### T17. Sparsity–error tradeoff plot
-Owner: Tenzin Kunga\
+Owner: Yash Karecha\
 **Status:** ⬜ Not started\
 **Depends on:** T9, T10, T11, T12 (λ sweep results)\
 **Unlocks:** T25\
@@ -193,7 +193,7 @@ File: `src/visualization/tradeoff_plots.py`\
 Output: Validation MSE vs number of non-zero features as $\lambda$ varies, for all sparse methods.
 
 ### T18. Coefficient path plot
-Owner: Tenzin Kunga\
+Owner: Yash Karecha\
 **Status:** ⬜ Not started\
 **Depends on:** T9, T10, T11 (coefficient vectors across λ)\
 **Unlocks:** T25\
