@@ -7,16 +7,16 @@
   "best_config_path": "outputs/logs/best_configs.yaml",
   "adaptive_selected": {
     "eps": 0.001,
-    "gamma": 1.0,
+    "gamma": 0.5,
     "iterations": 1000,
-    "lam": 0.0001,
+    "lam": 1.0,
     "max_outer_iter": null,
     "method": "adaptive_lasso",
-    "nnz": 283,
-    "runtime_s": 0.08136765000017476,
-    "solver": "ista",
-    "val_mae": 179017.6406677034,
-    "val_mse": 32952029430.096367
+    "nnz": 282,
+    "runtime_s": 0.08214074699935736,
+    "solver": "fista",
+    "val_mae": 20005.69724356788,
+    "val_mse": 911144802.0004897
   },
   "rows": [
     {
@@ -27,7 +27,7 @@
       "test_mse": 865125926.2297935,
       "test_mae": 18647.05160813634,
       "nnz": 283,
-      "runtime_s": 0.023726182999780576,
+      "runtime_s": 0.0367050470013055,
       "iterations": NaN
     },
     {
@@ -38,18 +38,18 @@
       "test_mse": 894021355.3213253,
       "test_mae": 19470.818271987737,
       "nnz": 240,
-      "runtime_s": 3.066748453999935,
+      "runtime_s": 3.024197348000598,
       "iterations": NaN
     },
     {
       "method": "adaptive_lasso",
-      "solver": "ista",
-      "val_mse": 32952029430.096367,
-      "val_mae": 179017.6406677034,
-      "test_mse": 33986052270.46804,
-      "test_mae": 181928.76376101412,
-      "nnz": 283,
-      "runtime_s": 0.0818087600000581,
+      "solver": "fista",
+      "val_mse": 911144802.0004897,
+      "val_mae": 20005.69724356788,
+      "test_mse": 894529896.3746411,
+      "test_mae": 19505.95387464254,
+      "nnz": 282,
+      "runtime_s": 0.08375011699899915,
       "iterations": 1000
     }
   ],

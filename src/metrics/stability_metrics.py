@@ -214,6 +214,11 @@ def run_stability_analysis(
 			),
 			drop_cols=data_cfg.get("drop_cols"),
 		)
+
+		# Center y so zero-intercept custom solvers predict correctly
+		y_mean = float(y_train.mean())
+		y_train_c = y_train - y_mean
+
 		_ = X_val, X_test, y_val, y_test, feature_names
 
 		adaptive_solver = str(best_adaptive["solver"])
@@ -257,7 +262,7 @@ def run_stability_analysis(
 
 		beta_a, _obj_a, _sp_a, _rt_a = run_adaptive_lasso(
 			X=X_train,
-			y=y_train,
+			y=y_train_c,
 			lam=float(best_adaptive["lam"]),
 			ridge_coef=np.asarray(ridge_results["beta"]),
 			gamma=float(best_adaptive["gamma"]),
@@ -278,7 +283,7 @@ def run_stability_analysis(
 		)
 		beta_di, _obj_di, _sp_di, _wt_di, _ic_di, _rt_di = run_dynamic_reweighted_lasso(
 			X=X_train,
-			y=y_train,
+			y=y_train_c,
 			lam=float(best_dyn_ista["lam"]),
 			gamma=float(best_dyn_ista["gamma"]),
 			eps=float(best_dyn_ista["eps"]),
@@ -302,7 +307,7 @@ def run_stability_analysis(
 		)
 		beta_df, _obj_df, _sp_df, _wt_df, _ic_df, _rt_df = run_dynamic_reweighted_lasso(
 			X=X_train,
-			y=y_train,
+			y=y_train_c,
 			lam=float(best_dyn_fista["lam"]),
 			gamma=float(best_dyn_fista["gamma"]),
 			eps=float(best_dyn_fista["eps"]),

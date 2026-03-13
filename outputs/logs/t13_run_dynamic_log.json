@@ -9,23 +9,23 @@
     {
       "method": "dynamic_reweighted_lasso_ista",
       "solver": "ista",
-      "val_mse": 32910032975.06194,
-      "val_mae": 179010.841606944,
-      "test_mse": 33984833781.65506,
-      "test_mae": 181975.1070627314,
-      "nnz": 234,
-      "runtime_s": 0.252840442998604,
-      "iterations": 3000
+      "val_mse": 778965140.9490047,
+      "val_mae": 18090.045098907256,
+      "test_mse": 830975941.2048745,
+      "test_mae": 18186.17699240722,
+      "nnz": 99,
+      "runtime_s": 0.21333790400058206,
+      "iterations": 2500
     },
     {
       "method": "dynamic_reweighted_lasso_fista",
       "solver": "fista",
-      "val_mse": 32892097088.917114,
-      "val_mae": 178905.74329126131,
-      "test_mse": 33945263199.7618,
-      "test_mae": 181815.8346882199,
-      "nnz": 231,
-      "runtime_s": 0.21972730399920692,
+      "val_mse": 798430563.0702212,
+      "val_mae": 18380.577001892663,
+      "test_mse": 828667214.9136565,
+      "test_mae": 17935.6266319796,
+      "nnz": 92,
+      "runtime_s": 0.21554208200177527,
       "iterations": 2500
     }
   ],
