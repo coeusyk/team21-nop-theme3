@@ -153,7 +153,7 @@ Output: Comparison table with MSE, MAE, $\|\hat\beta\|_0$ (non-zeros), runtime, 
 
 ### T14. Support stability analysis
 Owner: Both\
-**Status:** ⬜ Not started\
+**Status:** ✅ Done\
 **Depends on:** T3 (splits/seeds), T8, T9, T10, T11\
 **Unlocks:** T25\
 File: `src/metrics/stability_metrics.py`\

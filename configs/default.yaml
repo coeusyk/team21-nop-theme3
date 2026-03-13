@@ -32,3 +32,8 @@ outputs:
   figures: "outputs/figures"
   logs: "outputs/logs"
   models: "outputs/models"
+
+evaluation:
+  stability:
+    seeds: [42, 43, 44, 45, 46]
+    nonzero_tol: 1.0e-8
