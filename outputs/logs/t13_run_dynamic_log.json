@@ -1,0 +1,35 @@
+{
+  "task": "T13-run-dynamic",
+  "config_path": "configs/default.yaml",
+  "dynamic_config_path": "configs/dynamic_reweight.yaml",
+  "ista_config_path": "configs/ista.yaml",
+  "fista_config_path": "configs/fista.yaml",
+  "best_config_path": "/home/coeusyk/projects/team21-nop-theme3/outputs/logs/best_configs.yaml",
+  "dynamic_rows": [
+    {
+      "method": "dynamic_reweighted_lasso_ista",
+      "solver": "ista",
+      "val_mse": 32910032975.06194,
+      "val_mae": 179010.841606944,
+      "test_mse": 33984833781.65506,
+      "test_mae": 181975.1070627314,
+      "nnz": 234,
+      "runtime_s": 0.252840442998604,
+      "iterations": 3000
+    },
+    {
+      "method": "dynamic_reweighted_lasso_fista",
+      "solver": "fista",
+      "val_mse": 32892097088.917114,
+      "val_mae": 178905.74329126131,
+      "test_mse": 33945263199.7618,
+      "test_mae": 181815.8346882199,
+      "nnz": 231,
+      "runtime_s": 0.21972730399920692,
+      "iterations": 2500
+    }
+  ],
+  "dynamic_table_path": "/home/coeusyk/projects/team21-nop-theme3/outputs/tables/dynamic_comparison.csv",
+  "baseline_table_path": "/home/coeusyk/projects/team21-nop-theme3/outputs/tables/baselines_comparison.csv",
+  "full_table_path": "/home/coeusyk/projects/team21-nop-theme3/outputs/tables/full_comparison_table.csv"
+}
