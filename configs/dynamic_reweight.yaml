@@ -12,3 +12,11 @@ max_outer_iter: 10   # outer IRL1 loop iterations        (sweep: 5, 10, 20 in T1
 inner_max_iter: 500  # inner (ISTA/FISTA) max iterations
 inner_tol: 1.0e-5    # inner relative-change tolerance
 solver: "fista"      # inner solver: "ista" or "fista"
+
+search:
+	# T12 search space
+	lam_values: [0.0001, 0.001, 0.01, 0.1, 1.0]
+	gamma_values: [0.5, 1.0, 2.0]
+	eps_values: [0.001, 0.0001]
+	max_outer_iter_values: [5, 10, 20]
+	solvers: ["ista", "fista"]
