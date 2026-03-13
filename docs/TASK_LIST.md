@@ -131,7 +131,7 @@ Output: Outer loop over IRL1 weight updates; calls ISTA or FISTA as inner solver
 
 ### T12. Run hyperparameter search
 Owner: Yash Karecha\
-**Status:** ⬜ Not started\
+**Status:** ✅ Done\
 **Depends on:** T3 (data), T10, T11\
 **Unlocks:** T13\
 File: `src/experiments/cross_validate.py`\
