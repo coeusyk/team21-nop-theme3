@@ -198,7 +198,7 @@ def plot_coefficient_paths(
 
     out_dir = Path(output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    out_path = (out_dir / filename).resolve()
+    out_path = out_dir / filename
     fig.savefig(out_path, dpi=150, bbox_inches="tight")
     plt.close(fig)
     return out_path

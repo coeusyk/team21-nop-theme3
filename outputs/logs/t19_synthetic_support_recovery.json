@@ -8,6 +8,6 @@
   "beta_signal": 2.5,
   "n_trials": 5,
   "nonzero_tol": 1e-06,
-  "results_table_path": "/home/coeusyk/projects/team21-nop-theme3/outputs/tables/t19_synthetic_support_recovery.csv",
+  "results_table_path": "outputs/tables/t19_synthetic_support_recovery.csv",
   "best_method_by_jaccard": "adaptive_lasso_fista"
 }

@@ -251,7 +251,7 @@ def run_baseline_experiments(
 			"dynamic_config_path": dynamic_config_path,
 			"ista_config_path": ista_config_path,
 			"fista_config_path": fista_config_path,
-			"best_config_path": str(best_path.resolve()),
+			"best_config_path": str(best_path),
 			"adaptive_selected": best_adaptive,
 			"rows": rows,
 			"table_path": str(table_path),
