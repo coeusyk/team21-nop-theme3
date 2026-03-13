@@ -14,3 +14,6 @@ wheels/
 
 # kaggle.json file
 kaggle.json
+
+# Dataset
+data/
