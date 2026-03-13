@@ -145,7 +145,7 @@ Output: Best configs saved to `outputs/logs/best_configs.yaml`; all validation M
 
 ### T13. Run full experiment comparison
 Owner: Yash Karecha\
-**Status:** ⬜ Not started\
+**Status:** ✅ Done\
 **Depends on:** T8, T9, T10, T11, T12\
 **Unlocks:** T15, T20, T25\
 File: `src/experiments/run_baselines.py`, `src/experiments/run_dynamic.py`\
