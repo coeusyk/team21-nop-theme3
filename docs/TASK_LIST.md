@@ -130,7 +130,7 @@ Output: Outer loop over IRL1 weight updates; calls ISTA or FISTA as inner solver
 ## P1 — Evaluation Tasks
 
 ### T12. Run hyperparameter search
-Owner: Tenzin Kunga\
+Owner: Yash Karecha\
 **Status:** ⬜ Not started\
 **Depends on:** T3 (data), T10, T11\
 **Unlocks:** T13\
@@ -144,7 +144,7 @@ Search over:
 Output: Best configs saved to `outputs/logs/best_configs.yaml`; all validation MSE values to CSV.
 
 ### T13. Run full experiment comparison
-Owner: Tenzin Kunga\
+Owner: Yash Karecha\
 **Status:** ⬜ Not started\
 **Depends on:** T8, T9, T10, T11, T12\
 **Unlocks:** T15, T20, T25\
