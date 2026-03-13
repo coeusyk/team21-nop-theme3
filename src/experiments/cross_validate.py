@@ -73,9 +73,37 @@ def _get_search_grid(dynamic_cfg: dict) -> dict:
 	return search_cfg
 
 
+def _load_solver_cfg(path: str) -> dict:
+	"""Load a solver YAML config and return a dictionary."""
+	with open(path, "r", encoding="utf-8") as fh:
+		cfg = yaml.safe_load(fh)
+	if not isinstance(cfg, dict):
+		raise NotImplementedError(
+			f"Expected a mapping in solver config file: {path}"
+		)
+	return cfg
+
+
+def _solver_optim_params(
+	solver: str,
+	optim_cfg: dict,
+	ista_cfg: dict,
+	fista_cfg: dict,
+	X_train: np.ndarray,
+) -> tuple[float, int, float]:
+	"""Resolve alpha, max_iter, and tol for a given inner solver."""
+	solver_cfg = ista_cfg if solver == "ista" else fista_cfg
+	alpha = _resolve_alpha(X_train, solver_cfg.get("alpha", optim_cfg.get("alpha")))
+	max_iter = int(solver_cfg.get("max_iter", optim_cfg["max_iter"]))
+	tol = float(solver_cfg.get("tol", optim_cfg["tol"]))
+	return alpha, max_iter, tol
+
+
 def run_hyperparameter_search(
 	config_path: str = "configs/default.yaml",
 	dynamic_config_path: str = "configs/dynamic_reweight.yaml",
+	ista_config_path: str = "configs/ista.yaml",
+	fista_config_path: str = "configs/fista.yaml",
 ) -> dict:
 	"""Run T12 validation search and save best configs and full CSV results.
 
@@ -95,6 +123,8 @@ def run_hyperparameter_search(
 		cfg = yaml.safe_load(fh)
 	with open(dynamic_config_path, "r", encoding="utf-8") as fh:
 		dynamic_cfg = yaml.safe_load(fh)
+	ista_cfg = _load_solver_cfg(ista_config_path)
+	fista_cfg = _load_solver_cfg(fista_config_path)
 
 	data_cfg = cfg["data"]
 	outputs_cfg = cfg["outputs"]
@@ -120,10 +150,6 @@ def run_hyperparameter_search(
 
 	_ = X_test, y_test, feature_names  # Explicitly unused in T12.
 
-	alpha = _resolve_alpha(X_train, optim_cfg.get("alpha"))
-	max_iter = int(optim_cfg["max_iter"])
-	tol = float(optim_cfg["tol"])
-
 	ridge_model = RidgeCV(alphas=ridge_cfg["alphas"])
 	ridge_model.fit(X_train, y_train)
 	ridge_coef = ridge_model.coef_.astype(np.float64)
@@ -131,6 +157,13 @@ def run_hyperparameter_search(
 	records: list[dict] = []
 
 	for solver in search_cfg["solvers"]:
+		alpha, max_iter, tol = _solver_optim_params(
+			solver=str(solver),
+			optim_cfg=optim_cfg,
+			ista_cfg=ista_cfg,
+			fista_cfg=fista_cfg,
+			X_train=X_train,
+		)
 		for lam in search_cfg["lam_values"]:
 			for gamma in search_cfg["gamma_values"]:
 				for eps in search_cfg["eps_values"]:
@@ -185,8 +218,8 @@ def run_hyperparameter_search(
 							w_max=float(dynamic_cfg["w_max"]),
 							alpha=alpha,
 							max_outer_iter=int(max_outer_iter),
-							inner_max_iter=int(dynamic_cfg["inner_max_iter"]),
-							inner_tol=float(dynamic_cfg["inner_tol"]),
+							inner_max_iter=int(dynamic_cfg.get("inner_max_iter", max_iter)),
+							inner_tol=float(dynamic_cfg.get("inner_tol", tol)),
 							solver=str(solver),
 						)
 						pred_val_d = X_val @ beta_d
@@ -257,6 +290,8 @@ def run_hyperparameter_search(
 			"task": "T12-hyperparameter-search",
 			"config_path": config_path,
 			"dynamic_config_path": dynamic_config_path,
+			"ista_config_path": ista_config_path,
+			"fista_config_path": fista_config_path,
 			"result_rows": int(len(results_df)),
 			"best_configs": best_configs,
 			"csv_path": str(csv_path),
@@ -291,6 +326,18 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 		default="configs/dynamic_reweight.yaml",
 		help="Path to dynamic reweight YAML config.",
 	)
+	parser.add_argument(
+		"--ista-config",
+		type=str,
+		default="configs/ista.yaml",
+		help="Path to ISTA YAML config.",
+	)
+	parser.add_argument(
+		"--fista-config",
+		type=str,
+		default="configs/fista.yaml",
+		help="Path to FISTA YAML config.",
+	)
 	return parser.parse_args(argv)
 
 
@@ -300,6 +347,8 @@ def main(argv: list[str] | None = None) -> dict:
 	return run_hyperparameter_search(
 		config_path=args.config,
 		dynamic_config_path=args.dynamic_config,
+		ista_config_path=args.ista_config,
+		fista_config_path=args.fista_config,
 	)
 
 

@@ -1,0 +1,9 @@
+solver: "ista"
+
+# Step size for ISTA inner solves.
+# null means auto-compute as 1/L on training data.
+alpha: null
+
+# ISTA inner-iteration budget and stopping tolerance.
+max_iter: 1000
+tol: 1.0e-6
