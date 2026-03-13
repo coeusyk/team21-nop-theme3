@@ -1,8 +1,8 @@
 {
   "task": "T15-fairness-audit",
-  "full_table_path": "/home/coeusyk/projects/team21-nop-theme3/outputs/tables/full_comparison_table.csv",
-  "accuracy_comparison_path": "/home/coeusyk/projects/team21-nop-theme3/outputs/tables/accuracy_comparison.csv",
-  "optimizer_efficiency_path": "/home/coeusyk/projects/team21-nop-theme3/outputs/tables/optimizer_efficiency_comparison.csv",
+  "full_table_path": "outputs/tables/full_comparison_table.csv",
+  "accuracy_comparison_path": "outputs/tables/accuracy_comparison.csv",
+  "optimizer_efficiency_path": "outputs/tables/optimizer_efficiency_comparison.csv",
   "accuracy_includes_all_methods": true,
   "efficiency_only_custom_solvers": true,
   "best_sklearn_test_mse": 865125926.2297935,

@@ -4,7 +4,7 @@
   "dynamic_config_path": "configs/dynamic_reweight.yaml",
   "ista_config_path": "configs/ista.yaml",
   "fista_config_path": "configs/fista.yaml",
-  "best_config_path": "/home/coeusyk/projects/team21-nop-theme3/outputs/logs/best_configs.yaml",
+  "best_config_path": "outputs/logs/best_configs.yaml",
   "seeds": [
     42,
     43,
@@ -13,7 +13,7 @@
     46
   ],
   "nonzero_tol": 1e-08,
-  "table_path": "/home/coeusyk/projects/team21-nop-theme3/outputs/tables/stability_table.csv",
+  "table_path": "outputs/tables/stability_table.csv",
   "rows": [
     {
       "method": "ridge",

@@ -186,7 +186,7 @@ def run_fairness_audit(
 
 	summary = {
 		"task": "T15-fairness-audit",
-		"full_table_path": str(full_path.resolve()),
+		"full_table_path": str(full_path),
 		"accuracy_comparison_path": str(accuracy_path),
 		"optimizer_efficiency_path": str(efficiency_path),
 		"accuracy_includes_all_methods": bool(len(accuracy_df) >= 5),

@@ -149,15 +149,15 @@ The outer-loop convergence of IRL1 is supported by the theoretical analysis of C
 
 ### 4.1 Dataset
 
-The **House Prices: Advanced Regression Techniques** dataset (Kaggle) is a tabular regression benchmark with 1,460 training observations and 79 raw features describing residential properties in Ames, Iowa. The prediction target is the sale price, log-transformed to reduce skewness. After one-hot encoding categorical features, the design matrix typically contains 200–250 columns, making it a suitable high-dimensional regression benchmark with strong multicollinearity — for example, between `GrLivArea`, `1stFlrSF`, and `TotalBsmtSF`, and among the various quality score indicators.
+The **House Prices: Advanced Regression Techniques** dataset (Kaggle) is a tabular regression benchmark with 1,460 training observations and 79 raw features describing residential properties in Ames, Iowa. The prediction target is the raw sale price (`SalePrice`) without log transformation. After one-hot encoding categorical features, the design matrix typically contains 200–250 columns, making it a suitable high-dimensional regression benchmark with strong multicollinearity — for example, between `GrLivArea`, `1stFlrSF`, and `TotalBsmtSF`, and among the various quality score indicators.
 
 ### 4.2 Preprocessing Protocol
 
-1. **Missing values**: Numeric features imputed with column median; categorical features imputed with the string `"Missing"` as a valid category, following common practice for this dataset.
+1. **Missing values**: Numeric features imputed with column median; categorical features imputed with the most frequent (mode) category computed on the training split.
 2. **Encoding**: One-hot encoding for all categorical features; original category columns dropped.
 3. **Scaling**: All numeric features standardized to zero mean and unit variance after splitting, using parameters estimated on the training set only (no leakage).
-4. **Target**: Log-transform of `SalePrice`.
-5. **Split**: 60% train / 20% validation / 20% test, stratified by price decile, with fixed random seed for reproducibility.
+4. **Target**: Raw `SalePrice` (no log transformation).
+5. **Split**: 70% train / 10% validation / 20% test, using a random split with a fixed seed and no stratification.
 
 ### 4.3 Methods Compared
 

@@ -295,19 +295,19 @@ def run_hyperparameter_search(
 			"result_rows": int(len(results_df)),
 			"best_configs": best_configs,
 			"csv_path": str(csv_path),
-			"best_configs_yaml": str(yaml_path.resolve()),
+			"best_configs_yaml": str(yaml_path),
 		},
 		logs_dir,
 		"t12_search_log.json",
 	)
 
 	logger.info("Saved validation grid CSV: %s", csv_path)
-	logger.info("Saved best configs YAML: %s", yaml_path.resolve())
+	logger.info("Saved best configs YAML: %s", yaml_path)
 
 	return {
 		"best_configs": best_configs,
 		"validation_csv": str(csv_path),
-		"best_configs_yaml": str(yaml_path.resolve()),
+		"best_configs_yaml": str(yaml_path),
 	}
 
 

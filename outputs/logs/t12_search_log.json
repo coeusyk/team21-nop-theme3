@@ -59,6 +59,6 @@
       "iterations": 2500
     }
   },
-  "csv_path": "/home/coeusyk/projects/team21-nop-theme3/outputs/tables/validation_mse_grid.csv",
-  "best_configs_yaml": "/home/coeusyk/projects/team21-nop-theme3/outputs/logs/best_configs.yaml"
+  "csv_path": "outputs/tables/validation_mse_grid.csv",
+  "best_configs_yaml": "outputs/logs/best_configs.yaml"
 }
