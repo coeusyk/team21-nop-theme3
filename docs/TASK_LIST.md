@@ -111,7 +111,7 @@ Output: Standard LASSO using `sklearn.linear_model.LassoCV`; saves metrics and s
 
 ### T10. Implement static adaptive LASSO baseline
 Owner: Tenzin Kunga\
-**Status:** ⬜ Not started\
+**Status:** ✅ Done\
 **Depends on:** T3 (data), T5 or T6 (inner solver), T7 (weights), T8 (Ridge init)\
 **Unlocks:** T12, T13, T14, T16, T17, T18\
 File: `src/models/adaptive_lasso.py`\
@@ -119,7 +119,7 @@ Output: Run Ridge to get $\hat\beta_\text{ridge}$; compute fixed weights $w_j = 
 
 ### T11. Implement dynamic reweighted LASSO
 Owner: Yash Karecha\
-**Status:** ⬜ Not started\
+**Status:** ✅ Done\
 **Depends on:** T5 (ISTA), T6 (FISTA), T7 (reweight engine)\
 **Unlocks:** T12, T13, T14, T16, T17, T18, T20\
 File: `src/models/dynamic_reweighted_lasso.py`\
