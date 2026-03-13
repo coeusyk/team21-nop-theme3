@@ -1,0 +1,39 @@
+# Default configuration for all experiment scripts.
+# All hyperparameters and paths must be read from this file or a task-specific
+# YAML in configs/; no values are hardcoded in src/.
+
+data:
+  raw_path: "data/raw/train.csv"
+  target_col: "SalePrice"
+  drop_cols: ["Id"]
+  val_size: 0.10
+  test_size: 0.20
+  seed: 42
+  numeric_impute_strategy: "median"
+  categorical_impute_strategy: "most_frequent"
+
+model:
+  ridge:
+    alphas: [0.01, 0.1, 1.0, 10.0, 100.0]
+  lasso:
+    alphas: [0.0001, 0.001, 0.01, 0.1, 1.0]
+  adaptive_lasso:
+    epsilon: 0.001
+    gamma: 1.0
+
+optim:
+  max_iter: 1000
+  tol: 1.0e-6
+  # step size alpha: set to null to compute automatically as 0.99 / L
+  alpha: null
+
+outputs:
+  tables: "outputs/tables"
+  figures: "outputs/figures"
+  logs: "outputs/logs"
+  models: "outputs/models"
+
+evaluation:
+  stability:
+    seeds: [42, 43, 44, 45, 46]
+    nonzero_tol: 1.0e-8

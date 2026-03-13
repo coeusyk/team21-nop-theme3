@@ -1,0 +1,64 @@
+{
+  "task": "T14-stability-analysis",
+  "config_path": "configs/default.yaml",
+  "dynamic_config_path": "configs/dynamic_reweight.yaml",
+  "ista_config_path": "configs/ista.yaml",
+  "fista_config_path": "configs/fista.yaml",
+  "best_config_path": "/home/coeusyk/projects/team21-nop-theme3/outputs/logs/best_configs.yaml",
+  "seeds": [
+    42,
+    43,
+    44,
+    45,
+    46
+  ],
+  "nonzero_tol": 1e-08,
+  "table_path": "/home/coeusyk/projects/team21-nop-theme3/outputs/tables/stability_table.csv",
+  "rows": [
+    {
+      "method": "ridge",
+      "mean_jaccard": 0.9957572112372504,
+      "std_jaccard": 0.002643615727941471,
+      "min_jaccard": 0.9929328621908127,
+      "max_jaccard": 1.0,
+      "num_runs": 5,
+      "num_pairs": 10
+    },
+    {
+      "method": "lasso",
+      "mean_jaccard": 0.7689303986240856,
+      "std_jaccard": 0.018696599399045923,
+      "min_jaccard": 0.730909090909091,
+      "max_jaccard": 0.7985074626865671,
+      "num_runs": 5,
+      "num_pairs": 10
+    },
+    {
+      "method": "adaptive_lasso",
+      "mean_jaccard": 0.9957572112372504,
+      "std_jaccard": 0.002643615727941471,
+      "min_jaccard": 0.9929328621908127,
+      "max_jaccard": 1.0,
+      "num_runs": 5,
+      "num_pairs": 10
+    },
+    {
+      "method": "dynamic_reweighted_lasso_ista",
+      "mean_jaccard": 0.7272250922386122,
+      "std_jaccard": 0.018336758644354835,
+      "min_jaccard": 0.7,
+      "max_jaccard": 0.7554744525547445,
+      "num_runs": 5,
+      "num_pairs": 10
+    },
+    {
+      "method": "dynamic_reweighted_lasso_fista",
+      "mean_jaccard": 0.7488923033784124,
+      "std_jaccard": 0.01624906058860623,
+      "min_jaccard": 0.7279411764705882,
+      "max_jaccard": 0.7849056603773585,
+      "num_runs": 5,
+      "num_pairs": 10
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "task": "T13-run-baselines",
+  "config_path": "configs/default.yaml",
+  "dynamic_config_path": "configs/dynamic_reweight.yaml",
+  "ista_config_path": "configs/ista.yaml",
+  "fista_config_path": "configs/fista.yaml",
+  "best_config_path": "/home/coeusyk/projects/team21-nop-theme3/outputs/logs/best_configs.yaml",
+  "adaptive_selected": {
+    "eps": 0.001,
+    "gamma": 1.0,
+    "iterations": 1000,
+    "lam": 0.0001,
+    "max_outer_iter": null,
+    "method": "adaptive_lasso",
+    "nnz": 283,
+    "runtime_s": 0.08136765000017476,
+    "solver": "ista",
+    "val_mae": 179017.6406677034,
+    "val_mse": 32952029430.096367
+  },
+  "rows": [
+    {
+      "method": "ridge",
+      "solver": "sklearn_ridgecv",
+      "val_mse": 787378459.1835155,
+      "val_mae": 18167.596525367524,
+      "test_mse": 865125926.2297935,
+      "test_mae": 18647.05160813634,
+      "nnz": 283,
+      "runtime_s": 0.023726182999780576,
+      "iterations": NaN
+    },
+    {
+      "method": "lasso",
+      "solver": "sklearn_lassocv",
+      "val_mse": 895357083.9040277,
+      "val_mae": 19943.11498063878,
+      "test_mse": 894021355.3213253,
+      "test_mae": 19470.818271987737,
+      "nnz": 240,
+      "runtime_s": 3.066748453999935,
+      "iterations": NaN
+    },
+    {
+      "method": "adaptive_lasso",
+      "solver": "ista",
+      "val_mse": 32952029430.096367,
+      "val_mae": 179017.6406677034,
+      "test_mse": 33986052270.46804,
+      "test_mae": 181928.76376101412,
+      "nnz": 283,
+      "runtime_s": 0.0818087600000581,
+      "iterations": 1000
+    }
+  ],
+  "table_path": "/home/coeusyk/projects/team21-nop-theme3/outputs/tables/baselines_comparison.csv"
+}

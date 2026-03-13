@@ -1,0 +1,15 @@
+{
+  "task": "T20-feature-interpretation",
+  "solver": "fista",
+  "top_k": 20,
+  "nonzero_tol": 1e-06,
+  "nnz_total": 231,
+  "iterations_total": 2500,
+  "runtime_s": 0.22464482500163285,
+  "val_mse": 32892097088.917114,
+  "val_mae": 178905.74329126131,
+  "test_mse": 33945263199.7618,
+  "test_mae": 181815.8346882199,
+  "table_path": "/home/coeusyk/projects/team21-nop-theme3/outputs/tables/t20_feature_interpretation.csv",
+  "note": "Interpretations are domain-guided qualitative summaries for Ames housing features to support T25 discussion."
+}

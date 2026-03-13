@@ -8,3 +8,12 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Ruff-generated files
+.ruff_cache/
+
+# kaggle.json file
+kaggle.json
+
+# Dataset
+data/

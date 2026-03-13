@@ -8,10 +8,18 @@
 
 ## Branch Workflow
 
-- `main` is always clean and runnable. Never push broken code to main.
-- For every task, create a branch: `git checkout -b task/T<number>-short-description`
-  - Example: `git checkout -b task/T3-preprocessing-pipeline`
-- When done, open a Pull Request against `main`. Do not merge your own PRs.
+- `master` is always clean and runnable. Never push directly to master.
+- `develop` is the integration branch. All task branches are created from develop.
+- For every task:
+  ```bash
+  git checkout develop
+  git pull origin develop
+  git checkout -b task/T<N>-short-description
+  ```
+  Example: `git checkout -b task/T3-preprocessing-pipeline`
+- When done, open a Pull Request from your task branch → `develop`. Do not merge your own PRs.
+- `develop` → `master` only when a full milestone is verified working end to end.
+
 
 ## Code Style Rules
 
