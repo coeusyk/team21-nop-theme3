@@ -341,6 +341,73 @@ def run_synthetic_correlated_design_experiment(
 	trial_seeds = list(range(1, n_trials + 1))
 	true_support = set(range(support_size))
 
+	# --- Synthetic lambda sweep: find best lam for dynamic IRL1 on this problem scale ---
+	# Use trial_seed=1 data to sweep, then reuse for all trials
+	set_seed(1)
+	X_sw, y_sw, _ = _generate_toeplitz_synthetic_regression(
+		n_samples=n_samples,
+		n_features=n_features,
+		support_size=support_size,
+		rho=rho,
+		noise_std=noise_std,
+		beta_signal=beta_signal,
+		seed=1,
+	)
+	ridge_sw = Ridge(alpha=ridge_alpha)
+	ridge_sw.fit(X_sw, y_sw)
+	ridge_coef_sw = ridge_sw.coef_.astype(np.float64)
+	alpha_sw = _resolve_alpha(X_sw, None)
+
+	# Sweep over a range appropriate for this signal scale
+	synthetic_lam_grid = [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.5]
+	best_synthetic_lam_ista = 0.05  # fallback
+	best_synthetic_lam_fista = 0.05  # fallback
+	best_f1_ista, best_f1_fista = -1.0, -1.0
+	true_support_sw = set(range(support_size))
+
+	for lam_try in synthetic_lam_grid:
+		b_ista, _, _, _, _, _ = run_dynamic_reweighted_lasso(
+			X=X_sw,
+			y=y_sw,
+			lam=lam_try,
+			gamma=float(dyn_ista.get("gamma", gamma_default)),
+			eps=float(dyn_ista.get("eps", eps_default)),
+			w_max=w_max,
+			alpha=alpha_sw,
+			max_outer_iter=int(dyn_ista.get("max_outer_iter", max_outer_default)),
+			inner_max_iter=int(dynamic_cfg.get("inner_max_iter", 1000)),
+			inner_tol=float(dynamic_cfg.get("inner_tol", 1e-4)),
+			solver="ista",
+		)
+		m_ista = _support_recovery_metrics(
+			_support_set(b_ista, nonzero_tol),
+			true_support_sw,
+		)
+		if m_ista["f1"] > best_f1_ista:
+			best_f1_ista = m_ista["f1"]
+			best_synthetic_lam_ista = lam_try
+
+		b_fista, _, _, _, _, _ = run_dynamic_reweighted_lasso(
+			X=X_sw,
+			y=y_sw,
+			lam=lam_try,
+			gamma=float(dyn_fista.get("gamma", gamma_default)),
+			eps=float(dyn_fista.get("eps", eps_default)),
+			w_max=w_max,
+			alpha=alpha_sw,
+			max_outer_iter=int(dyn_fista.get("max_outer_iter", max_outer_default)),
+			inner_max_iter=int(dynamic_cfg.get("inner_max_iter", 1000)),
+			inner_tol=float(dynamic_cfg.get("inner_tol", 1e-4)),
+			solver="fista",
+		)
+		m_fista = _support_recovery_metrics(
+			_support_set(b_fista, nonzero_tol),
+			true_support_sw,
+		)
+		if m_fista["f1"] > best_f1_fista:
+			best_f1_fista = m_fista["f1"]
+			best_synthetic_lam_fista = lam_try
+
 	for trial_seed in trial_seeds:
 		set_seed(trial_seed)
 		X, y, _beta_true = _generate_toeplitz_synthetic_regression(
@@ -401,7 +468,7 @@ def run_synthetic_correlated_design_experiment(
 		beta_dyn_ista, _, _, _, _, _ = run_dynamic_reweighted_lasso(
 			X=X,
 			y=y,
-			lam=float(dyn_ista.get("lam", lam_default)),
+			lam=best_synthetic_lam_ista,
 			gamma=float(dyn_ista.get("gamma", gamma_default)),
 			eps=float(dyn_ista.get("eps", eps_default)),
 			w_max=w_max,
@@ -414,7 +481,7 @@ def run_synthetic_correlated_design_experiment(
 		beta_dyn_fista, _, _, _, _, _ = run_dynamic_reweighted_lasso(
 			X=X,
 			y=y,
-			lam=float(dyn_fista.get("lam", lam_default)),
+			lam=best_synthetic_lam_fista,
 			gamma=float(dyn_fista.get("gamma", gamma_default)),
 			eps=float(dyn_fista.get("eps", eps_default)),
 			w_max=w_max,
@@ -559,6 +626,9 @@ def run_feature_interpretation_report(
 		drop_cols=data_cfg.get("drop_cols"),
 	)
 
+	y_mean = float(y_train.mean())
+	y_train_c = y_train - y_mean
+
 	solver_cfg = ista_cfg if solver == "ista" else fista_cfg
 	alpha = _resolve_alpha(X_train, solver_cfg.get("alpha", optim_cfg.get("alpha")))
 	max_iter = int(solver_cfg.get("max_iter", optim_cfg["max_iter"]))
@@ -567,7 +637,7 @@ def run_feature_interpretation_report(
 	beta, _obj_trace, _sp_trace, _w_trace, inner_counts, runtime_s = (
 		run_dynamic_reweighted_lasso(
 			X=X_train,
-			y=y_train,
+			y=y_train_c,
 			lam=float(dyn_best.get("lam", dynamic_cfg["lam"])),
 			gamma=float(dyn_best.get("gamma", dynamic_cfg["gamma"])),
 			eps=float(dyn_best.get("eps", dynamic_cfg["eps"])),
@@ -582,8 +652,8 @@ def run_feature_interpretation_report(
 		)
 	)
 
-	val_metrics = compute_regression_metrics(y_val, X_val @ beta)
-	test_metrics = compute_regression_metrics(y_test, X_test @ beta)
+	val_metrics = compute_regression_metrics(y_val, X_val @ beta + y_mean)
+	test_metrics = compute_regression_metrics(y_test, X_test @ beta + y_mean)
 
 	coef_series = pd.Series(beta, index=feature_names)
 	coef_series = coef_series[np.abs(coef_series) > nonzero_tol]

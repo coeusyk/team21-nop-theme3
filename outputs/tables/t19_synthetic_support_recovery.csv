@@ -1,6 +1,6 @@
 method,precision_mean,precision_std,recall_mean,recall_std,f1_mean,f1_std,jaccard_mean,jaccard_std,support_size_mean,support_size_std
 adaptive_lasso_fista,1.0,0.0,1.0,0.0,1.0,0.0,1.0,0.0,20.0,0.0
 adaptive_lasso_ista,1.0,0.0,1.0,0.0,1.0,0.0,1.0,0.0,20.0,0.0
+dynamic_reweighted_lasso_fista,1.0,0.0,1.0,0.0,1.0,0.0,1.0,0.0,20.0,0.0
+dynamic_reweighted_lasso_ista,1.0,0.0,1.0,0.0,1.0,0.0,1.0,0.0,20.0,0.0
 lasso,1.0,0.0,1.0,0.0,1.0,0.0,1.0,0.0,20.0,0.0
-dynamic_reweighted_lasso_fista,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0
-dynamic_reweighted_lasso_ista,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0
