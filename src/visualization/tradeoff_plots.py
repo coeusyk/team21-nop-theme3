@@ -31,11 +31,13 @@ I/O contract:
 
 from __future__ import annotations
 
+import argparse
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
+import yaml
 
 
 # Canonical display labels for (method, solver) combinations.
@@ -144,3 +146,43 @@ def plot_sparsity_error_tradeoff(
     fig.savefig(out_path, dpi=150, bbox_inches="tight")
     plt.close(fig)
     return out_path
+
+
+def _load_yaml(path: str) -> dict:
+    """Load YAML config into a dictionary."""
+    with open(path, "r", encoding="utf-8") as fh:
+        cfg = yaml.safe_load(fh)
+    if not isinstance(cfg, dict):
+        raise ValueError(f"Expected mapping YAML at {path}")
+    return cfg
+
+
+def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    """Parse CLI arguments for T17 tradeoff figure generation."""
+    parser = argparse.ArgumentParser(description="Generate T17 tradeoff figure")
+    parser.add_argument("--config", type=str, default="configs/default.yaml")
+    parser.add_argument(
+        "--results-csv", type=str, default="outputs/tables/validation_mse_grid.csv"
+    )
+    parser.add_argument("--output-dir", type=str, default=None)
+    parser.add_argument("--filename", type=str, default="t17_sparsity_error_tradeoff.png")
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> Path:
+    """CLI entry point for regenerating the T17 sparsity-error tradeoff figure."""
+    args = _parse_args(argv)
+    cfg = _load_yaml(args.config)
+    output_dir = args.output_dir or str(cfg["outputs"]["figures"])
+    results_df = pd.read_csv(args.results_csv)
+    out_path = plot_sparsity_error_tradeoff(
+        results_df=results_df,
+        output_dir=output_dir,
+        filename=args.filename,
+    )
+    print(out_path)
+    return out_path
+
+
+if __name__ == "__main__":
+    main()
