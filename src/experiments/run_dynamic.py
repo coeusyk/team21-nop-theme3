@@ -155,6 +155,12 @@ def run_dynamic_experiments(
 		drop_cols=data_cfg.get("drop_cols"),
 	)
 
+	# Center y so zero-intercept custom solvers predict correctly
+	y_mean = float(y_train.mean())
+	y_train_c = y_train - y_mean
+	y_val_c = y_val - y_mean
+	y_test_c = y_test - y_mean
+
 	dynamic_rows: list[dict] = []
 	for best_row in [best_dyn_ista, best_dyn_fista]:
 		solver = str(best_row["solver"])
@@ -174,7 +180,7 @@ def run_dynamic_experiments(
 			runtime_d,
 		) = run_dynamic_reweighted_lasso(
 			X=X_train,
-			y=y_train,
+			y=y_train_c,
 			lam=float(best_row["lam"]),
 			gamma=float(best_row["gamma"]),
 			eps=float(best_row["eps"]),
@@ -185,8 +191,8 @@ def run_dynamic_experiments(
 			inner_tol=float(dynamic_cfg.get("inner_tol", solver_tol)),
 			solver=solver,
 		)
-		val_metrics = compute_regression_metrics(y_val, X_val @ beta_d)
-		test_metrics = compute_regression_metrics(y_test, X_test @ beta_d)
+		val_metrics = compute_regression_metrics(y_val, X_val @ beta_d + y_mean)
+		test_metrics = compute_regression_metrics(y_test, X_test @ beta_d + y_mean)
 		dynamic_rows.append(
 			{
 				"method": f"dynamic_reweighted_lasso_{solver}",

@@ -148,6 +148,11 @@ def run_hyperparameter_search(
 		drop_cols=data_cfg.get("drop_cols"),
 	)
 
+	# Center y so zero-intercept custom solvers predict correctly
+	y_mean = float(y_train.mean())
+	y_train_c = y_train - y_mean
+	y_val_c = y_val - y_mean
+
 	_ = X_test, y_test, feature_names  # Explicitly unused in T12.
 
 	ridge_model = RidgeCV(alphas=ridge_cfg["alphas"])
@@ -169,17 +174,18 @@ def run_hyperparameter_search(
 				for eps in search_cfg["eps_values"]:
 					beta_a, obj_a, sp_a, rt_a = run_adaptive_lasso(
 						X=X_train,
-						y=y_train,
-						lam=float(lam),
-						ridge_coef=ridge_coef,
-						gamma=float(gamma),
-						eps=float(eps),
-						alpha=alpha,
-						max_iter=max_iter,
-						tol=tol,
-						solver=str(solver),
-					)
-					pred_val_a = X_val @ beta_a
+							y=y_train_c,
+							lam=float(lam),
+							ridge_coef=ridge_coef,
+							gamma=float(gamma),
+							eps=float(eps),
+							alpha=alpha,
+							max_iter=max_iter,
+							tol=tol,
+							solver=str(solver),
+						)
+					pred_val_a = X_val @ beta_a + y_mean
+					
 					val_metrics_a = compute_regression_metrics(y_val, pred_val_a)
 					records.append(
 						{
@@ -211,7 +217,7 @@ def run_hyperparameter_search(
 							rt_d,
 						) = run_dynamic_reweighted_lasso(
 							X=X_train,
-							y=y_train,
+							y=y_train_c,
 							lam=float(lam),
 							gamma=float(gamma),
 							eps=float(eps),
@@ -222,7 +228,7 @@ def run_hyperparameter_search(
 							inner_tol=float(dynamic_cfg.get("inner_tol", tol)),
 							solver=str(solver),
 						)
-						pred_val_d = X_val @ beta_d
+						pred_val_d = X_val @ beta_d + y_mean
 						val_metrics_d = compute_regression_metrics(y_val, pred_val_d)
 						records.append(
 							{

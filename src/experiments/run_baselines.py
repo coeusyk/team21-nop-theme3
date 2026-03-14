@@ -155,6 +155,12 @@ def run_baseline_experiments(
 		drop_cols=data_cfg.get("drop_cols"),
 	)
 
+	# Center y so zero-intercept custom solvers predict correctly
+	y_mean = float(y_train.mean())
+	y_train_c = y_train - y_mean
+	y_val_c = y_val - y_mean
+	y_test_c = y_test - y_mean
+
 	adaptive_solver = str(best_adaptive["solver"])
 	alpha, max_iter, tol = _solver_optim_params(
 		solver=adaptive_solver,
@@ -190,7 +196,7 @@ def run_baseline_experiments(
 
 	beta_a, obj_a, _sp_a, rt_a = run_adaptive_lasso(
 		X=X_train,
-		y=y_train,
+		y=y_train_c,
 		lam=float(best_adaptive["lam"]),
 		ridge_coef=ridge_results["beta"],
 		gamma=float(best_adaptive["gamma"]),
@@ -200,8 +206,8 @@ def run_baseline_experiments(
 		tol=tol,
 		solver=adaptive_solver,
 	)
-	val_metrics_a = compute_regression_metrics(y_val, X_val @ beta_a)
-	test_metrics_a = compute_regression_metrics(y_test, X_test @ beta_a)
+	val_metrics_a = compute_regression_metrics(y_val, X_val @ beta_a + y_mean)
+	test_metrics_a = compute_regression_metrics(y_test, X_test @ beta_a + y_mean)
 
 	rows = [
 		{

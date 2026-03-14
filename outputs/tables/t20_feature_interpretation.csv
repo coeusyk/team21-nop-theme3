@@ -1,21 +1,21 @@
 feature,coefficient,abs_coefficient,direction,interpretation
-RoofMatl_ClyTile,-18640.258526953214,18640.258526953214,negative,General structural/categorical feature that appears to decreases price.
-GrLivArea,18039.1871982506,18039.1871982506,positive,Size-related feature: larger usable space generally increases price.
-PoolArea,11892.51295581448,11892.51295581448,positive,Size-related feature: larger usable space generally increases price.
-TotalBsmtSF,11341.119538234982,11341.119538234982,positive,Size-related feature: larger usable space generally increases price.
-GarageQual_Ex,10263.752905407988,10263.752905407988,positive,Quality/condition proxy: better values typically increases price.
-Condition2_PosN,-10116.168597912232,10116.168597912232,negative,Quality/condition proxy: better values typically decreases price.
-2ndFlrSF,9610.648686759421,9610.648686759421,positive,Size-related feature: larger usable space generally increases price.
-OverallQual,9167.295347536903,9167.295347536903,positive,Quality/condition proxy: better values typically increases price.
-PoolQC_Ex,8656.732240079707,8656.732240079707,positive,General structural/categorical feature that appears to increases price.
-YearBuilt,8385.111761676615,8385.111761676615,positive,Age/renovation signal: newer or renovated homes usually increases price.
-BsmtQual_Ex,7992.255209313874,7992.255209313874,positive,Quality/condition proxy: better values typically increases price.
-GarageCond_Ex,-7792.969295964252,7792.969295964252,negative,Quality/condition proxy: better values typically decreases price.
-BsmtFinSF1,7354.3394143690375,7354.3394143690375,positive,Size-related feature: larger usable space generally increases price.
-LotArea,7069.998873657563,7069.998873657563,positive,Size-related feature: larger usable space generally increases price.
-Neighborhood_StoneBr,6945.508078649666,6945.508078649666,positive,Neighborhood effect: this location-level indicator increases price.
-BldgType_1Fam,6484.01956619824,6484.01956619824,positive,General structural/categorical feature that appears to increases price.
-OverallCond,6377.372460842763,6377.372460842763,positive,Quality/condition proxy: better values typically increases price.
-GarageArea,6229.366441255309,6229.366441255309,positive,Size-related feature: larger usable space generally increases price.
-Neighborhood_NridgHt,6030.084228557482,6030.084228557482,positive,Neighborhood effect: this location-level indicator increases price.
-Neighborhood_NoRidge,5582.41539962051,5582.41539962051,positive,Neighborhood effect: this location-level indicator increases price.
+GrLivArea,29348.335138491868,29348.335138491868,positive,Size-related feature: larger usable space generally increases price.
+RoofMatl_ClyTile,-21052.55427231628,21052.55427231628,negative,General structural/categorical feature that appears to decreases price.
+Condition2_PosN,-9516.546793622892,9516.546793622892,negative,Quality/condition proxy: better values typically decreases price.
+GarageQual_Ex,9370.234930131284,9370.234930131284,positive,Quality/condition proxy: better values typically increases price.
+YearBuilt,8778.704864135623,8778.704864135623,positive,Age/renovation signal: newer or renovated homes usually increases price.
+BsmtQual_Ex,8553.764965365011,8553.764965365011,positive,Quality/condition proxy: better values typically increases price.
+OverallQual,8356.406808781385,8356.406808781385,positive,Quality/condition proxy: better values typically increases price.
+PoolArea,7508.55855347388,7508.55855347388,positive,Size-related feature: larger usable space generally increases price.
+GarageCond_Ex,-7325.706256395864,7325.706256395864,negative,Quality/condition proxy: better values typically decreases price.
+BsmtFinSF1,6571.540420639411,6571.540420639411,positive,Size-related feature: larger usable space generally increases price.
+TotalBsmtSF,6569.017863035649,6569.017863035649,positive,Size-related feature: larger usable space generally increases price.
+Neighborhood_NoRidge,6007.587120711701,6007.587120711701,positive,Neighborhood effect: this location-level indicator increases price.
+Neighborhood_StoneBr,6002.666941514977,6002.666941514977,positive,Neighborhood effect: this location-level indicator increases price.
+BldgType_1Fam,5604.134095911553,5604.134095911553,positive,General structural/categorical feature that appears to increases price.
+OverallCond,5303.346556688467,5303.346556688467,positive,Quality/condition proxy: better values typically increases price.
+Neighborhood_NridgHt,5123.731694365779,5123.731694365779,positive,Neighborhood effect: this location-level indicator increases price.
+GarageArea,5085.353492620948,5085.353492620948,positive,Size-related feature: larger usable space generally increases price.
+Exterior1st_BrkFace,4636.9192474963465,4636.9192474963465,positive,General structural/categorical feature that appears to increases price.
+ExterQual_Ex,4457.598857912062,4457.598857912062,positive,Quality/condition proxy: better values typically increases price.
+Neighborhood_Crawfor,4297.702778112967,4297.702778112967,positive,Neighborhood effect: this location-level indicator increases price.
