@@ -48,7 +48,7 @@ runtime characteristics.
 You can still reproduce results on native Windows (PowerShell):
 
 ```powershell
-git clone <repo-url>
+git clone https://github.com/coeusyk/team21-nop-theme3.git
 cd team21-nop-theme3
 uv sync
 .\.venv\Scripts\Activate.ps1
