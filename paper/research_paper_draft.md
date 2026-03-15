@@ -1,5 +1,10 @@
 # Dynamic Soft-Thresholding via Iteratively Reweighted Proximal Gradient for Feature Selection in High-Dimensional Regression
 
+**Authors:** Yash Karecha, Tenzin Kunga  
+**Programme:** B.Tech, Computer Science (AI/ML)  
+**Year:** 3rd Year  
+**Course Context:** Numerical Optimisation, Theme 3 Project
+
 ---
 
 ## 1. Introduction
@@ -54,7 +59,7 @@ $$\beta^{(k+1)} = \arg\min_\beta \; \frac{1}{2n}\|y - X\beta\|_2^2 + \lambda \su
 
 where the weights are updated from the current solution:
 
-$$w_j^{(k)} = \frac{1}{|\beta_j^{(k)}| + \epsilon}$$
+$$w_j^{(k)} = \frac{1}{(|\beta_j^{(k)}| + \epsilon)^\gamma}$$
 
 The parameter $\epsilon > 0$ ensures numerical stability when $\beta_j^{(k)} = 0$. The key insight is that this weighting scheme approximates the $\log$-sum penalty $\sum_j \log(|\beta_j| + \epsilon)$, which is a concave approximation to the $\ell_0$ norm. Candès et al. demonstrated that IRL1 recovers substantially sparser solutions than unweighted $\ell_1$ minimization, particularly when signal coefficients are large and noise is low. The Adaptive LASSO is a special case of the IRL1 framework where only one outer iteration is performed.
 
@@ -193,35 +198,57 @@ Step size: $\alpha = 0.99/L$ where $L = \lambda_{\max}(X^\top X)/n$, computed on
 
 ## 5. Results and Discussion
 
-*(This section is populated from experimental outputs in `outputs/tables/` and `outputs/figures/`.)*
+This section is populated from the generated artifacts in `outputs/tables/`, `outputs/logs/`, and `outputs/figures/`.
 
 ### 5.1 Predictive Performance
 
-*[Insert comparison table: Method | Val MSE | Test MSE | Test MAE | Non-zeros | Runtime]*
+| Method | Solver | Val MSE | Test MSE | Test MAE | Non-zeros | Runtime (s) |
+|---|---|---:|---:|---:|---:|---:|
+| Ridge | sklearn | 787,378,459.18 | 865,125,926.23 | 18,647.05 | 283 | 0.0367 |
+| Standard LASSO | sklearn | 895,357,083.90 | 894,021,355.32 | 19,470.82 | 240 | 3.0242 |
+| Static Adaptive LASSO | FISTA | 911,144,802.00 | 894,529,896.37 | 19,505.95 | 282 | 0.0838 |
+| Dynamic IRL1-PG | ISTA | **778,965,140.95** | 830,975,941.20 | 18,186.18 | 99 | 0.2133 |
+| Dynamic IRL1-PG | FISTA | 798,430,563.07 | **828,667,214.91** | **17,935.63** | **92** | 0.2155 |
 
-Key expected findings based on theory:
-- Ridge will achieve competitive MSE but zero sparsity.
-- Standard LASSO will produce sparse solutions but may be unstable under multicollinearity.
-- Static Adaptive LASSO should improve sparsity and selection stability over LASSO.
-- IRL1-PG is expected to produce sparser solutions with comparable or better MSE, consistent with IRL1 behavior reported in Candès et al. (2008).
+Main observations:
+- Dynamic IRL1-PG dominates static Adaptive LASSO in both predictive error and sparsity for this split.
+- Relative to Ridge, Dynamic IRL1-PG (FISTA) improves test MSE by about 4.21% while reducing selected coefficients from 283 to 92.
+- Relative to standard LASSO, Dynamic IRL1-PG (FISTA) improves test MSE by about 7.31% and test MAE by about 7.88%.
+- ISTA gives the best validation MSE, while FISTA gives the best test MSE and test MAE.
 
 ### 5.2 Convergence Analysis
 
-*[Insert convergence plot: objective vs. inner iteration for ISTA, FISTA, IRL1-ISTA, IRL1-FISTA]*
+Convergence evidence is provided in `outputs/figures/t16_convergence.png`.
 
-The FISTA inner solver is expected to reach the same subproblem solution as ISTA in fewer iterations, consistent with its $O(1/k^2)$ rate. The dynamic variant adds a small weight-recomputation overhead per outer step but is expected to require fewer outer iterations to stabilize the active set than static methods.
+For selected best configurations, both dynamic variants used 2,500 total inner iterations (5 outer iterations), while static adaptive used 1,000 iterations. Runtime remains low in absolute terms (about 0.21 s for dynamic methods), and FISTA/ISTA are similar in wall-clock time at this scale.
 
 ### 5.3 Sparsity–Accuracy Trade-off
 
-*[Insert plot: validation MSE vs. number of non-zero features as λ varies]*
+The sparsity-error frontier is shown in `outputs/figures/t17_sparsity_error_tradeoff.png`.
 
-This plot reveals whether the IRL1 reweighting produces a more favorable Pareto front (better MSE at the same sparsity level) compared to uniform LASSO.
+Dynamic reweighting moves the solution to much sparser regions (about 92-99 non-zeros) while maintaining lower validation error than denser static adaptive points (about 282-283 non-zeros).
 
 ### 5.4 Feature Selection Stability
 
-*[Insert stability table: Method | Jaccard index (mean ± std across 5 seeds)]*
+| Method | Mean Jaccard | Std Jaccard |
+|---|---:|---:|
+| Ridge | 0.9958 | 0.0026 |
+| Standard LASSO | 0.7689 | 0.0187 |
+| Static Adaptive LASSO | 0.9873 | 0.0042 |
+| Dynamic IRL1-PG (ISTA) | 0.2923 | 0.0694 |
+| Dynamic IRL1-PG (FISTA) | 0.2721 | 0.0637 |
 
-Standard LASSO is expected to exhibit low Jaccard stability under correlated features, because different random perturbations to the data may cause the solver to arbitrarily select different members of a correlated group. The reweighting scheme should improve stability by penalizing small coefficients more consistently.
+Stability reveals a trade-off: dynamic IRL1-PG improves sparsity and predictive performance, but support overlap across seeds is lower than static adaptive weighting. This is consistent with stronger pruning around correlated/borderline predictors.
+
+### 5.5 Feature Interpretation
+
+From `outputs/tables/t20_feature_interpretation.csv` (best dynamic FISTA run, 92 non-zero coefficients), the strongest effects include:
+
+- Positive: `GrLivArea` (+29,348), `GarageQual_Ex` (+9,370), `YearBuilt` (+8,779), `OverallQual` (+8,356), `PoolArea` (+7,509).
+- Negative: `RoofMatl_ClyTile` (-21,053), `Condition2_PosN` (-9,517), `GarageCond_Ex` (-7,326).
+- Strong neighborhood effects: `Neighborhood_NoRidge`, `Neighborhood_StoneBr`, `Neighborhood_NridgHt`, `Neighborhood_Crawfor`.
+
+These patterns align with housing-domain intuition: size, quality, and location dominate predictive structure.
 
 ---
 
@@ -245,7 +272,7 @@ The following limitations must be stated explicitly and honestly:
 
 This project implements and empirically evaluates IRL1-PG — the Iteratively Reweighted $\ell_1$ Minimization framework of Candès, Wakin, and Boyd (2008) integrated within ISTA and FISTA proximal gradient solvers — for sparse feature selection in high-dimensional tabular regression. The method is applied to the House Prices dataset, which exhibits the strong feature correlations that motivate dynamic reweighting over static $\ell_1$ penalties.
 
-The key findings are: (1) dynamic reweighting produces sparser solutions than uniform LASSO at comparable predictive accuracy; (2) FISTA converges faster than ISTA for each fixed-weight subproblem; (3) feature selection stability under correlated predictors is improved by the reweighting mechanism. Limitations include the absence of a global outer-loop convergence proof and sensitivity to preprocessing choices.
+The key findings are: (1) dynamic IRL1-PG yields substantially sparser solutions (92-99 non-zeros) than Ridge/LASSO/static adaptive baselines (240-283 non-zeros) while improving test error on this split; (2) within dynamic variants, ISTA gives the lowest validation MSE while FISTA gives the lowest test MSE and MAE; (3) dynamic reweighting improves the sparsity-error frontier but reduces feature-support stability across seeds relative to static adaptive weighting. Limitations include the absence of a global outer-loop convergence proof and sensitivity to preprocessing.
 
 Future directions include: extending IRL1-PG to generalized linear models, combining it with group-sparse penalties for handling structured correlations, and applying it to higher-dimensional genomics or financial datasets where the $p \gg n$ regime is more extreme.
 
