@@ -28,6 +28,35 @@ regression on the House Prices dataset.
 
 This project is managed with `uv`.
 
+## Windows Users: Preferred and Fallback Workflows
+
+If you are on Windows, the recommended workflow is to clone and run this repo
+inside WSL (Ubuntu) for closest behavior to the environment used to generate
+the current project outputs.
+
+### Preferred on Windows: WSL (recommended)
+
+1. Open your WSL terminal (Ubuntu).
+2. Clone the repository inside the Linux filesystem (example: `~/projects/`), not in `C:\`.
+3. Follow the same `uv` commands shown below.
+
+This gives the most reliable reproducibility for paths, package behavior, and
+runtime characteristics.
+
+### Native Windows (still supported)
+
+You can still reproduce results on native Windows (PowerShell):
+
+```powershell
+git clone <repo-url>
+cd team21-nop-theme3
+uv sync
+.\.venv\Scripts\Activate.ps1
+```
+
+Then run the same module commands from the End-to-End Reproduction section.
+Results should match in metrics (seeded), while runtime can differ by system.
+
 ### 1. Install uv
 
 See: https://docs.astral.sh/uv/
@@ -51,6 +80,14 @@ If you prefer a plain pip workflow:
 ```bash
 python -m venv .venv
 source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+For native Windows with pip (PowerShell):
+
+```powershell
+py -3.13 -m venv .venv
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
 
