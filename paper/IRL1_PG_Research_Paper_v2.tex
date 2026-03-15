@@ -82,26 +82,23 @@
 
 \begin{abstract}
     \noindent
-    High-dimensional tabular regression datasets frequently contain hundreds of
-    correlated predictors, most of which carry no genuine predictive signal.
-    Standard LASSO addresses sparsity but suffers from arbitrary variable selection
-    under multicollinearity and over-shrinkage of large coefficients; the Elastic Net
-    \citep{zouhastie2005} partially mitigates the grouping problem but does not
-    produce sparser solutions than LASSO\@.  We implement and empirically evaluate
-    \textbf{IRL1-PG}: the Iteratively Reweighted $\ell_1$ Minimisation (IRL1)
-    framework of \citet{candes2008} integrated within ISTA and FISTA proximal
-    gradient solvers \citep{beck2009}.  Applied to the Kaggle \emph{House Prices:
-    Advanced Regression Techniques} benchmark, IRL1-PG is compared against Ridge
-    regression, standard LASSO, and static Adaptive LASSO \citep{zou2006} under
-    matched experimental conditions.  The best dynamic configurations reach
-    validation MSE of $7.79\times 10^8$ (ISTA) and test MSE of $8.29\times 10^8$
-    (FISTA), both below Ridge and LASSO while using only 92--99 non-zero
-    coefficients versus 240--283 for baselines.  FISTA---motivated by Nesterov's
-    accelerated gradient framework \citep{nesterov1983}---improves test MAE over
-    ISTA at nearly identical runtime.  We provide an honest account of
-    convergence scope and make no claim of algorithmic novelty; the contribution is
-    a rigorous, reproducible empirical study of IRL1-PG behaviour in a correlated
-    tabular regression setting.
+    High-dimensional tabular regression often involves many correlated predictors,
+    only a subset of which contributes meaningful signal.  While LASSO promotes
+    sparsity, it can be unstable under multicollinearity and may over-shrink large
+    coefficients; Elastic Net \citep{zouhastie2005} improves grouping behaviour but
+    does not necessarily yield sparser models.  We implement and evaluate
+    \textbf{IRL1-PG}, combining Iteratively Reweighted $\ell_1$ Minimisation
+    \citep{candes2008} with ISTA/FISTA proximal gradient solvers \citep{beck2009}.
+    On the Kaggle \emph{House Prices: Advanced Regression Techniques} benchmark, we
+    compare dynamic IRL1-PG against Ridge, standard LASSO, and static Adaptive LASSO
+    \citep{zou2006} under matched preprocessing and data splits.  The best dynamic
+    settings reach validation MSE $7.79\times 10^8$ (ISTA) and test MSE
+    $8.29\times 10^8$ (FISTA), outperforming Ridge and LASSO while using only 92--99
+    non-zero coefficients versus 240--283 in baseline models.  FISTA, motivated by
+    Nesterov acceleration \citep{nesterov1983}, improves test MAE over ISTA at nearly
+    identical runtime.  We do not claim algorithmic novelty; the contribution is a
+    careful and reproducible empirical analysis of IRL1-PG in a correlated tabular
+    regression setting.
 \end{abstract}
 
 \newpage
@@ -113,50 +110,49 @@
 \section{Introduction}
 \label{sec:intro}
 
-High-dimensional regression---where the number of predictors $p$ is large relative
-to the number of observations $n$---is a central challenge in applied machine learning
-and statistics.  In domains such as real estate pricing, gene expression analysis, and
-financial modelling, datasets routinely contain hundreds of correlated features, most of
-which carry redundant or no predictive signal.  A regression model that retains all
-features will overfit, generalise poorly, and obscure interpretability.  Sparse models
-that simultaneously estimate coefficients and select relevant variables are therefore
-highly desirable.
+High-dimensional regression is often challenging in practice, especially when the number
+of features is much larger than the number of observations.  In domains such as real
+estate pricing, gene expression studies, and finance, datasets often contain hundreds
+of predictors, but many of them are either redundant or weakly informative.  If all
+features are used without control, models tend to overfit, generalise poorly, and lose
+interpretability.  This motivates sparse modelling: retaining only the coefficients
+that carry meaningful predictive signal.
 
-The LASSO (Least Absolute Shrinkage and Selection Operator), introduced by
-\citet{tibshirani1996}, addresses this need by adding an $\ell_1$ penalty to the
-least-squares objective.  The $\ell_1$ penalty induces exact zeros in the coefficient
-vector, producing a sparse solution.  However, standard LASSO has well-documented
-limitations in settings with strongly correlated predictors: it tends to arbitrarily
-select one variable from a correlated group, over-shrinks large true coefficients, and
-can be inconsistent for variable selection under certain design conditions
-\citep{huang2008}.  \citet{zouhastie2005} proposed the Elastic Net to address the
-grouping problem, combining an $\ell_1$ and an $\ell_2$ penalty so that correlated
-predictors tend to be included or excluded together; however, the Elastic Net does not
-achieve sparser solutions than LASSO and is not the focus of this work.
+LASSO (Least Absolute Shrinkage and Selection Operator), introduced by
+\citet{tibshirani1996}, became popular because adding an $\ell_1$ penalty to least
+squares drives many coefficients exactly to zero.  However, LASSO is not without
+limitations.  With highly correlated predictors, it can behave unstably: selecting one
+variable from a correlated group arbitrarily, over-shrinking important coefficients,
+or missing relevant predictors depending on the design structure
+\citep{huang2008}.
 
-\citet{zou2006} proposed the Adaptive LASSO, which corrects the over-shrinkage and
-consistency issues by assigning feature-specific penalty weights derived from an initial
-estimator such as Ridge or OLS\@.  With suitable weights, the Adaptive LASSO enjoys
-\textbf{oracle properties}---it recovers the correct support and yields asymptotically
-normal estimates as if the true model were known in advance \citep{huang2008}.
+To address correlation effects, \citet{zouhastie2005} proposed the Elastic Net, which
+combines $\ell_1$ and $\ell_2$ penalties so correlated variables are more likely to be
+selected or removed together.  This improves grouping behaviour, but Elastic Net does
+not typically produce greater sparsity than LASSO, so it is not the main focus here.
 
-A closely related and more general framework is \textbf{Iteratively Reweighted $\ell_1$
-Minimisation (IRL1)}, introduced by \citet{candes2008}.  IRL1 solves a sequence of
-weighted $\ell_1$ problems where the weights are recomputed from the current iterate at
-each outer step, rather than fixed from a one-shot initial estimator.  A parallel
-approach---Iteratively Reweighted Least Squares (IRLS)---targets the same
-$\ell_0$-approximation goal via reweighted $\ell_2$ sub-problems \citep{daubechies2009};
-both frameworks are unified in \citet{wipf2011}, who shows that reweighted methods
-minimise concave approximations to the $\ell_0$ norm.
+Adaptive LASSO, proposed by \citet{zou2006}, extends this idea by assigning
+feature-specific penalty weights obtained from an initial estimator (for example Ridge
+or least squares).  With appropriately chosen weights, Adaptive LASSO can recover the
+correct support and achieve asymptotically efficient estimation, commonly described as
+having \textbf{oracle properties} \citep{huang2008}.
 
-This project proposes and empirically evaluates an \textbf{IRL1-PG} algorithm: the IRL1
-reweighting framework integrated into a proximal gradient solver supporting both ISTA
-and FISTA \citep{beck2009}.  The FISTA momentum update is rooted in Nesterov's
-seminal accelerated gradient method \citep{nesterov1983}, which achieves $O(1/k^2)$
-convergence for smooth convex objectives.  We apply IRL1-PG to the House Prices:
-Advanced Regression Techniques dataset and compare it against Ridge, standard LASSO,
-and static Adaptive LASSO\@.  Our contribution is not a new algorithm; it is a rigorous
-empirical study of IRL1-PG's behaviour in a correlated tabular regression setting.
+A broader framework is \textbf{Iteratively Reweighted $\ell_1$ Minimisation (IRL1)},
+introduced by \citet{candes2008}.  Instead of fixing weights once, IRL1 updates the
+weights at each outer iteration based on the current coefficient estimates.  A related
+family, Iteratively Reweighted Least Squares (IRLS), solves reweighted $\ell_2$
+sub-problems with the same goal of approximating the ideal sparse $\ell_0$ objective
+\citep{daubechies2009}.  \citet{wipf2011} showed that IRL1 and IRLS can be viewed as
+alternative procedures for minimising concave surrogate penalties of $\ell_0$.
+
+In our project, IRL1 is integrated into a proximal gradient solver, yielding the
+\textbf{IRL1-PG} algorithm.  The implementation supports both ISTA and accelerated
+FISTA; the latter follows Nesterov's momentum framework \citep{nesterov1983}, which
+achieves faster convergence for smooth convex problems.  We evaluate IRL1-PG on the
+House Prices: Advanced Regression Techniques dataset and compare it against Ridge,
+standard LASSO, and static Adaptive LASSO (with fixed weights).  The objective is not
+to claim algorithmic novelty, but to provide a careful empirical analysis of how
+IRL1-PG behaves in correlated, real-world tabular regression settings.
 
 % ══════════════════════════════════════════════════════════════════════════════
 \section{Related Work}
@@ -164,70 +160,70 @@ empirical study of IRL1-PG's behaviour in a correlated tabular regression settin
 
 \subsection{LASSO and Proximal Gradient Methods}
 
-\citet{tibshirani1996} introduced LASSO as the solution to
+LASSO was introduced by \citet{tibshirani1996} and tackles the objective
 \begin{equation}
     \min_{\beta} \; \frac{1}{2n}\norm{y - X\beta}_2^2 + \lambda \norm{\beta}_1.
     \label{eq:lasso}
 \end{equation}
-The $\ell_1$ penalty is convex but non-smooth, making direct gradient descent
-inapplicable at zero.  The standard optimisation framework for such composite objectives
-is \textbf{proximal gradient descent} \citep{parikh2014}.  For an objective
-$f(\beta) + g(\beta)$ where $f$ is smooth and $g$ is convex and non-smooth, the
-proximal gradient update is
+The $\ell_1$ penalty is convex but non-smooth, which makes standard gradient descent
+problematic at points where coefficients hit zero.  For this composite setting,
+the standard optimisation framework is \textbf{proximal gradient descent}
+\citep{parikh2014}.  If the objective is split as $f(\beta) + g(\beta)$, where
+$f$ is smooth and $g$ is convex but non-smooth, the update is
 \begin{equation}
     \beta^{k+1} = \prox_{\alpha g}\!\left(\beta^k - \alpha \nabla f(\beta^k)\right),
     \label{eq:proxgrad}
 \end{equation}
 where $\alpha > 0$ is the step size and $\prox_{\alpha g}$ is the proximal operator.
-When $g(\beta) = \lambda\norm{\beta}_1$, the proximal operator reduces to coordinate-wise
-soft-thresholding \citep{beck2009}, converging at rate $O(1/k)$ for $\alpha \leq 1/L$
-where $L$ is the Lipschitz constant of $\nabla f$.
+When $g(\beta) = \lambda\norm{\beta}_1$, this becomes coordinate-wise soft-thresholding
+\citep{beck2009}.  The method converges at rate $O(1/k)$ provided that
+$\alpha \leq 1/L$, where $L$ is the Lipschitz constant of $\nabla f$.
 
 \subsection{Elastic Net}
 
-\citet{zouhastie2005} proposed the Elastic Net, which adds a ridge penalty alongside the
-$\ell_1$ term:
+Elastic Net, proposed by \citet{zouhastie2005}, blends LASSO and ridge penalties:
 \begin{equation}
     \min_{\beta} \; \frac{1}{2n}\norm{y - X\beta}_2^2
     + \lambda_1 \norm{\beta}_1 + \lambda_2 \norm{\beta}_2^2.
     \label{eq:elasticnet}
 \end{equation}
-The Elastic Net encourages a \emph{grouping effect}: strongly correlated predictors tend
-to enter or leave the model together.  This is particularly useful when $p \gg n$.
-However, it does not provide the additional sparsity that iterative reweighting achieves,
-making it a natural comparison point rather than a superior alternative to IRL1-PG in
-our setting.
+Its key property is the \emph{grouping effect}: highly correlated predictors tend to
+enter or leave the model together.  This is particularly useful when predictors
+outnumber samples.  Even so, Elastic Net typically does not deliver the additional
+sparsity observed with iterative reweighting, so in this work it serves as a useful
+baseline rather than a direct alternative to IRL1-PG.
 
 \subsection{FISTA---Accelerated Proximal Gradient}
 
-\citet{beck2009} introduced FISTA, which adds a Nesterov-style momentum step to ISTA
-without changing the per-iteration computational cost.  FISTA achieves the accelerated
-convergence rate $O(1/k^2)$, rooted in Nesterov's \citeyearpar{nesterov1983} framework
-for smooth convex objectives.  The momentum sequence is defined by $t_1 = 1$ and
+\citet{beck2009} extended ISTA with a Nesterov-style momentum term to obtain FISTA,
+achieving faster convergence without increasing per-iteration complexity.  Grounded in
+Nesterov's \citeyearpar{nesterov1983} acceleration framework for smooth convex
+objectives, FISTA reaches a convergence rate of $O(1/k^2)$.  The momentum sequence is
+initialised with $t_1 = 1$ and updated by
 \begin{equation}
     t_{k+1} = \frac{1 + \sqrt{1 + 4t_k^2}}{2},
     \label{eq:fista_t}
 \end{equation}
-with the extrapolation step applied before each proximal update.
+with an extrapolation step applied before each proximal update.
 
 \subsection{Adaptive LASSO and Oracle Properties}
 
-\citet{zou2006} proposed the Adaptive LASSO with feature-specific weights:
+\citet{zou2006} proposed Adaptive LASSO, which introduces feature-specific weights:
 \begin{equation}
     \min_{\beta} \; \frac{1}{2n}\norm{y - X\beta}_2^2
     + \lambda \sum_{j=1}^{p} w_j \abs{\beta_j},
     \label{eq:adalasso}
 \end{equation}
 where $w_j = 1/\abs{\hat{\beta}_j^{\mathrm{init}}}^\gamma$.  \citet{huang2008} extended
-the oracle property analysis to the high-dimensional $p > n$ regime, showing that
-consistent variable selection is achievable even when dimensionality grows with the sample
-size, under partial orthogonality conditions.  The key limitation of static Adaptive LASSO
-is that weights are fixed from a one-shot initial estimate.
+oracle analysis to the high-dimensional $p > n$ regime, showing that consistent
+variable selection remains possible under partial orthogonality assumptions.  The main
+limitation in practice is that static Adaptive LASSO fixes these weights after the
+initial estimate and does not adapt them during optimisation.
 
 \subsection{Iteratively Reweighted $\ell_1$ and $\ell_2$ Methods}
 
-\citet{candes2008} introduced IRL1 as a method to more closely approximate the $\ell_0$
-norm than standard $\ell_1$ minimisation, solving a sequence of weighted $\ell_1$
+\citet{candes2008} introduced IRL1 as a way to approximate the $\ell_0$ objective more
+closely than standard $\ell_1$ minimisation by solving a sequence of weighted $\ell_1$
 problems:
 \begin{equation}
     \beta^{(k+1)} = \arg\min_\beta \; \frac{1}{2n}\norm{y - X\beta}_2^2
@@ -235,12 +231,13 @@ problems:
     w_j^{(k)} = \frac{1}{\left(\abs{\beta_j^{(k)}} + \epsilon\right)^\gamma}.
     \label{eq:irl1_outer}
 \end{equation}
-The weighting scheme approximates the log-sum penalty $\sum_j \log(\abs{\beta_j} +
-\epsilon)$, a concave approximation to the $\ell_0$ norm.  A parallel IRLS approach
-\citep{daubechies2009} achieves the same goal via reweighted $\ell_2$ sub-problems and
-provides convergence proofs under restricted isometry conditions.  \citet{wipf2011}
-unify both frameworks, showing that all reweighted $\ell_1$ and $\ell_2$ methods can be
-viewed as minimising a family of concave sparsity-inducing merit functions.
+This weighting rule approximates the log-sum penalty
+$\sum_j \log(\abs{\beta_j} + \epsilon)$, which is a concave surrogate for the
+$\ell_0$ norm.  In parallel, IRLS \citep{daubechies2009} uses reweighted
+$\ell_2$ sub-problems to target the same sparse-recovery objective, with convergence
+results under restricted isometry conditions.  \citet{wipf2011} unify these views,
+showing that both reweighted $\ell_1$ and $\ell_2$ methods can be interpreted as
+optimising concave, sparsity-inducing merit functions.
 
 % ══════════════════════════════════════════════════════════════════════════════
 \section{Methodology}
@@ -249,8 +246,8 @@ viewed as minimising a family of concave sparsity-inducing merit functions.
 \subsection{Problem Setup}
 
 Let $X \in \R^{n \times p}$ be the standardised design matrix, $y \in \R^n$ the
-response vector, and $\beta \in \R^p$ the coefficient vector to be estimated.  The
-smooth part of our objective is the mean squared loss
+response vector, and $\beta \in \R^p$ the coefficient vector.  We write the smooth
+loss term as
 \begin{equation}
     f(\beta) = \frac{1}{2n}\norm{y - X\beta}_2^2,
     \label{eq:smooth}
@@ -260,12 +257,12 @@ with gradient
     \nabla f(\beta) = -\frac{1}{n}X^\top(y - X\beta).
     \label{eq:gradient}
 \end{equation}
-The gradient $\nabla f$ is Lipschitz continuous with constant
+For this quadratic loss, $\nabla f$ is Lipschitz continuous with constant
 \begin{equation}
     L = \frac{\lambda_{\max}(X^\top X)}{n},
     \label{eq:lipschitz}
 \end{equation}
-and a valid step size is any $\alpha \in (0, 1/L]$ \citep{parikh2014}.
+so any step size $\alpha \in (0, 1/L]$ is valid \citep{parikh2014}.
 
 \subsection{Weighted Proximal Operator and Soft-Thresholding}
 
@@ -277,8 +274,8 @@ proximal update is coordinate-wise \textbf{weighted soft-thresholding}:
     \beta_j^{+} = \sign(z_j)\max\!\left(\abs{z_j} - \alpha \lambda w_j,\; 0\right).
     \label{eq:wst}
 \end{equation}
-It retains $\beta_j$ only if $\abs{z_j}$ exceeds the coordinate-specific threshold
-$\tau_j = \alpha \lambda w_j$.
+Each coordinate survives only when $\abs{z_j}$ exceeds the
+coordinate-specific threshold $\tau_j = \alpha \lambda w_j$.
 
 \begin{remark}[Connection to $\ell_1$ subdifferential]
 The subdifferential of $\abs{\beta_j}$ is
@@ -290,10 +287,10 @@ The subdifferential of $\abs{\beta_j}$ is
     \end{cases}
     \label{eq:subdiff}
 \end{equation}
-The IRL1 weight $w_j^{(k)}$ is a continuous measure of proximity to the
-non-differentiable point zero.  Large $\abs{\beta_j}$ gives small $w_j$, reducing the
-effective threshold; small $\abs{\beta_j}$ gives large $w_j$, amplifying the
-sparsity-inducing force \citep{candes2008}.
+The IRL1 weight $w_j^{(k)}$ acts as a continuous indicator of how close a coordinate
+is to the non-differentiable point at zero.  Large $\abs{\beta_j}$ leads to a smaller
+weight and a weaker threshold; small $\abs{\beta_j}$ leads to a larger weight and
+stronger shrinkage toward zero \citep{candes2008}.
 \end{remark}
 
 \subsection{Initialisation and the Pruning Mechanism}
@@ -304,8 +301,8 @@ thresholds $\tau_j = \alpha \lambda / \epsilon^\gamma$ are therefore maximally l
 all coordinates are zeroed on the first proximal step.  As optimisation proceeds, features
 that carry genuine signal grow in magnitude, causing their weights to decrease and
 thresholds to relax.  Irrelevant features remain near zero, sustain high weights, and are
-repeatedly zeroed.  This progressive refinement of a small active set is a natural
-consequence of the IRL1 weight schedule \citep{wipf2011}, not an ad hoc design choice.
+repeatedly zeroed.  This progressive refinement of a small active set follows directly
+from the IRL1 weight schedule \citep{wipf2011}, rather than a separate manual rule.
 
 \subsection{IRL1 Weight Update}
 
@@ -314,8 +311,8 @@ After each outer iteration the weights are recomputed as \citep{candes2008}:
     w_j^{(k)} = \frac{1}{\left(\abs{\beta_j^{(k)}} + \epsilon\right)^\gamma},
     \label{eq:irl1_weights}
 \end{equation}
-where $\gamma > 0$ controls the sharpness of the sparsity-inducing force and
-$\epsilon > 0$ ensures numerical stability.
+where $\gamma > 0$ controls how aggressively small coefficients are penalised, and
+$\epsilon > 0$ ensures numerical stability near zero.
 
 \subsection{ISTA Inner Solver}
 
@@ -326,8 +323,8 @@ For fixed weights $w^{(k)}$, the weighted LASSO sub-problem is solved using ISTA
     \item Gradient step: $z = \beta^t - \alpha g$
     \item Proximal step: $\beta^{t+1}_j = \sign(z_j)\max(\abs{z_j} - \alpha\lambda w_j^{(k)},\, 0)$
 \end{enumerate}
-ISTA converges at rate $O(1/t)$ for the fixed-weight convex sub-problem with
-$\alpha \leq 1/L$.
+With fixed weights and $\alpha \leq 1/L$, ISTA converges at rate $O(1/t)$ for this
+convex sub-problem.
 
 \subsection{FISTA Inner Solver}
 
@@ -343,8 +340,8 @@ Initialise $t_1 = 1$, $y^1 = \beta^0$.  At inner iteration $t$:
     \item Momentum point for next step:
           $y^{t+1} = \beta^{t+1} + \frac{t_t - 1}{t_{t+1}}(\beta^{t+1} - \beta^t)$
 \end{enumerate}
-FISTA achieves $O(1/t^2)$ convergence for the fixed-weight sub-problem, a strict
-improvement over ISTA at no additional per-iteration cost.
+For the fixed-weight sub-problem, FISTA achieves $O(1/t^2)$ convergence, improving on
+ISTA without increasing per-iteration complexity.
 
 \subsection{Stopping Criterion}
 
@@ -355,8 +352,8 @@ below tolerance:
          {\max\!\left(1,\; \norm{\beta^{\mathrm{prev}}}_2\right)} < \mathrm{tol}.
     \label{eq:stopping}
 \end{equation}
-Using $\max(1, \norm{\beta^{\mathrm{prev}}}_2)$ in the denominator avoids false
-convergence when $\beta$ is near zero \citep{parikh2014}.
+The denominator $\max(1, \norm{\beta^{\mathrm{prev}}}_2)$ avoids spurious early
+stopping when coefficients are still close to zero \citep{parikh2014}.
 
 \subsection{IRL1-PG: Full Algorithm}
 
@@ -386,16 +383,14 @@ convergence when $\beta$ is near zero \citep{parikh2014}.
 \subsection{Convergence Scope}
 
 \begin{remark}[Scope of convergence guarantees]
-Because the weight vector $w^{(k)}$ changes each outer iteration, the objective
-function changes across outer iterations.  The standard ISTA/FISTA convergence
-guarantees---which bound the gap to the optimal value of a \emph{fixed} objective
-\citep{beck2009}---apply only to the inner solver for each fixed sub-problem.  They do
-not directly guarantee that the sequence $\{\beta^{(k)}\}$ converges to any single
-fixed problem's solution.  Outer-loop convergence of IRL1 is supported by
-\citet{candes2008} and \citet{wipf2011}, who establish convergence to a local minimum
-of the log-sum approximation to $\ell_0$ under mild conditions.  In this project,
-outer-loop convergence is treated \emph{empirically}: we monitor the objective value,
-coefficient norm differences, and sparsity level across outer iterations.
+Because $w^{(k)}$ changes at every outer step, the objective itself changes across
+outer iterations.  Classical ISTA/FISTA guarantees---stated for a \emph{fixed}
+objective \citep{beck2009}---therefore apply to each inner solve, but not directly to
+the full outer sequence $\{\beta^{(k)}\}$.  Existing IRL1 analyses
+\citep{candes2008,wipf2011} support convergence to local minima of concave
+approximations such as the log-sum penalty under mild assumptions.  In this work, we
+evaluate outer-loop behaviour empirically using objective traces, coefficient changes,
+and sparsity trajectories across iterations.
 \end{remark}
 
 % ══════════════════════════════════════════════════════════════════════════════
@@ -419,13 +414,13 @@ improve upon it \citep{candes2008}.
 
 \begin{enumerate}[noitemsep]
     \item \textbf{Missing values:} Numeric features imputed with column median;
-          categorical features imputed with the most frequent category computed on the
-          training split.
+            categorical features imputed with the most frequent category from the
+            training split.
     \item \textbf{Encoding:} One-hot encoding for all categorical features; original
           category columns dropped.
     \item \textbf{Scaling:} All numeric features standardised to zero mean and unit
-          variance after splitting, using parameters estimated on the training set only
-          (no leakage).
+            variance after splitting, using parameters estimated on the training set only
+            (to avoid leakage).
     \item \textbf{Target:} Raw \texttt{SalePrice} (no log transformation).
     \item \textbf{Split:} 70\% train / 10\% validation / 20\% test, using a random split
           with a fixed seed and no stratification.
@@ -451,9 +446,9 @@ IRL1-PG + FISTA            & Proposed & Custom FISTA              & Updated per 
 \end{table}
 
 \noindent\textbf{Note:} The accuracy comparison (MSE, MAE) includes sklearn baselines
-because they represent the best achievable performance with standard tools.  The optimiser
-efficiency comparison (iterations, runtime) is restricted to the custom ISTA/FISTA
-variants only, to ensure a fair comparison at the optimiser level.
+because they provide reliable reference performance from standard implementations.  The
+optimiser-efficiency comparison (iterations, runtime) is restricted to custom
+ISTA/FISTA variants only, so solver behaviour is compared under matched stopping rules.
 
 \subsection{Hyperparameter Search}
 
@@ -504,15 +499,15 @@ Dynamic IRL1-FISTA & \fmtpred{798430563.0702212} & \fmtpred{828667214.9136565} &
 \end{tabular}
 \end{table}
 
-Observed findings:
+Key observations are as follows:
 \begin{itemize}[noitemsep]
-    \item Dynamic IRL1-PG dominates static Adaptive LASSO in both error and sparsity for this dataset split.
+    \item On this split, dynamic IRL1-PG outperforms static Adaptive LASSO in both predictive error and sparsity.
     \item Relative to Ridge, IRL1-PG (FISTA) improves test MSE by approximately $4.21\%$
         and reduces selected features from 283 to 92.
     \item Relative to standard LASSO, IRL1-PG (FISTA) improves test MSE by approximately $7.31\%$
         and test MAE by approximately $7.88\%$, while selecting fewer features.
     \item Within dynamic variants, ISTA attains lower validation MSE, while FISTA achieves the
-        best test MSE and best test MAE.
+        best test MSE and test MAE.
 \end{itemize}
 
 \subsection{Convergence Analysis}
@@ -529,8 +524,8 @@ Both dynamic solvers terminate at 2,500 total inner iterations under the selecte
 configuration (5 outer iterations), while the static adaptive baseline uses 1,000
 iterations.  Runtime remains small in absolute terms (about 0.21 seconds for dynamic
 methods), and FISTA and ISTA are nearly identical in wall-clock time for this problem
-size.  The convergence traces also show that dynamic variants stabilize at much lower
-sparsity levels than static adaptive baselines.
+size.  The convergence traces also show that dynamic variants stabilise at much lower
+sparsity levels than the static adaptive baseline.
 
 \subsection{Sparsity--Accuracy Trade-off}
 
@@ -544,8 +539,8 @@ sparsity levels than static adaptive baselines.
 \end{figure}
 
 The empirical Pareto front confirms that dynamic reweighting can move to lower-$\ell_0$
-regions (about 92--99 non-zeros) while maintaining or improving validation error versus
-the much denser static baselines (about 282--283 non-zeros).
+regions (about 92--99 non-zeros) while maintaining or improving validation error,
+compared with the much denser static baselines (about 282--283 non-zeros).
 
 \subsection{Feature Selection Stability}
 
@@ -570,7 +565,7 @@ Ridge & \fmtjac{0.9957572112372504} & \fmtjac{0.002643615727941471}\\
 The stability profile shows a trade-off: dynamic IRL1-PG improves sparsity and test
 error but yields lower support overlap across seeds than static adaptive LASSO.  This
 is consistent with stronger pruning near correlated or borderline predictors, where small
-data perturbations can change whether a feature survives the reweighting cycle.
+data perturbations can change whether a feature survives later reweighting cycles.
 
 \subsection{Feature Interpretation}
 
@@ -582,7 +577,7 @@ is \texttt{GrLivArea} ($+29{,}348$), while large-magnitude negative effects incl
 Strong positive signals also include quality and neighborhood indicators such as
 \texttt{GarageQual\_Ex}, \texttt{YearBuilt}, \texttt{OverallQual},
 \texttt{Neighborhood\_NoRidge}, and \texttt{Neighborhood\_StoneBr}.  This aligns with
-domain expectations: size, build/finish quality, and location remain the strongest
+domain expectations: size, build quality, and location remain the strongest
 determinants of sale price in the selected sparse model.
 
 \begin{table}[H]
@@ -617,13 +612,14 @@ determinants of sale price in the selected sparse model.
           The ISTA/FISTA convergence rates \citep{beck2009} apply to the inner
           fixed-weight sub-problems.  The outer IRL1 loop changes the objective each
           iteration, so standard convergence bounds do not apply globally.
-          Outer-loop convergence is demonstrated empirically, not proven theoretically.
+            We therefore report outer-loop convergence empirically rather than claiming a
+            full global proof.
 
     \item \textbf{No oracle property claim for the dynamic variant.}
           The static Adaptive LASSO has oracle properties under conditions specified by
           \citet{zou2006} and extended by \citet{huang2008}.  The dynamic IRL1 variant
           does not inherit these guarantees automatically; extending oracle property
-          analysis to the iterative reweighting case requires additional theoretical work.
+            analysis to iterative reweighting remains open theoretical work.
 
     \item \textbf{Efficiency claims are solver-relative.}
           Comparisons of runtime and iteration counts are meaningful only between custom
@@ -631,7 +627,7 @@ determinants of sale price in the selected sparse model.
           custom implementation outperforms scikit-learn's production coordinate descent.
 
     \item \textbf{Sensitivity to preprocessing.}
-          Results depend on the choice of imputation strategy, encoding, and scaling.
+            Results depend on choices in imputation, encoding, and scaling.
           Different preprocessing choices may alter which features are selected and how
           stable that selection is.
 
@@ -646,24 +642,23 @@ determinants of sale price in the selected sparse model.
 \section{Conclusion}
 \label{sec:conclusion}
 
-This project implements and empirically evaluates IRL1-PG---the Iteratively Reweighted
-$\ell_1$ Minimisation framework of \citet{candes2008} integrated within ISTA and FISTA
+We implemented and empirically evaluated IRL1-PG---the Iteratively Reweighted
+$\ell_1$ Minimisation framework of \citet{candes2008} integrated with ISTA and FISTA
 proximal gradient solvers \citep{beck2009}---for sparse feature selection in
-high-dimensional tabular regression.  The method is applied to the House Prices dataset,
-which exhibits the strong feature correlations that motivate dynamic reweighting over
-static $\ell_1$ penalties \citep{zouhastie2005}.  The IRL1 outer loop is understood
-within the broader class of reweighted sparsity methods unified by \citet{wipf2011},
-while the FISTA acceleration follows Nesterov's \citeyearpar{nesterov1983} momentum
-framework.
+high-dimensional tabular regression.  We applied the method to the House Prices
+dataset, where strong feature correlations motivate dynamic reweighting over static
+$\ell_1$ penalties \citep{zouhastie2005}.  The IRL1 outer loop sits within the broader
+class of reweighted sparsity methods unified by \citet{wipf2011}, while FISTA
+acceleration follows Nesterov's \citeyearpar{nesterov1983} momentum framework.
 
 The key findings are: (1) dynamic IRL1-PG produces substantially sparser models
 (92--99 non-zeros) than Ridge, LASSO, and static Adaptive LASSO (240--283 non-zeros)
 while improving test error on this dataset split; (2) within dynamic variants, ISTA
 achieves the best validation MSE while FISTA achieves the best test MSE and MAE with
-comparable runtime; (3) dynamic reweighting improves sparsity--error trade-offs but
+comparable runtime; and (3) dynamic reweighting improves sparsity--error trade-offs but
 reduces support stability across random seeds relative to static adaptive weighting.
-Limitations include the absence of a global outer-loop convergence proof and sensitivity
-to preprocessing choices.
+We also note practical limits: no global outer-loop convergence theorem is claimed, and
+results remain sensitive to preprocessing choices.
 
 Future directions include extending IRL1-PG to generalised linear models, combining it
 with group-sparse penalties for handling structured correlations \citep{zouhastie2005},
