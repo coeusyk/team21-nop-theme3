@@ -5,7 +5,7 @@
   "nonzero_tol": 1e-06,
   "nnz_total": 92,
   "iterations_total": 2500,
-  "runtime_s": 0.20942306100005226,
+  "runtime_s": 0.22511989399936283,
   "val_mse": 798430563.0702212,
   "val_mae": 18380.577001892663,
   "test_mse": 828667214.9136565,

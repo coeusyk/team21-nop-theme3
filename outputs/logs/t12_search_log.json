@@ -16,7 +16,7 @@
       "val_mse": 911448799.4500475,
       "val_mae": 19941.680896738773,
       "nnz": 283,
-      "runtime_s": 0.0803796689997398,
+      "runtime_s": 0.08528513700002804,
       "iterations": 1000
     },
     "adaptive_lasso_fista": {
@@ -29,7 +29,7 @@
       "val_mse": 911144802.0004897,
       "val_mae": 20005.69724356788,
       "nnz": 282,
-      "runtime_s": 0.08214074699935736,
+      "runtime_s": 0.08741275899956236,
       "iterations": 1000
     },
     "dynamic_reweighted_lasso_ista": {
@@ -42,7 +42,7 @@
       "val_mse": 778965140.9490047,
       "val_mae": 18090.045098907256,
       "nnz": 99,
-      "runtime_s": 0.19755038899893407,
+      "runtime_s": 0.21614625900110696,
       "iterations": 2500
     },
     "dynamic_reweighted_lasso_fista": {
@@ -55,7 +55,7 @@
       "val_mse": 798430563.0702212,
       "val_mae": 18380.577001892663,
       "nnz": 92,
-      "runtime_s": 0.2017897259993333,
+      "runtime_s": 0.21885695699984353,
       "iterations": 2500
     }
   },

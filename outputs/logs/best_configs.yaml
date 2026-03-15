@@ -6,7 +6,7 @@ adaptive_lasso_fista:
   max_outer_iter: null
   method: adaptive_lasso
   nnz: 282
-  runtime_s: 0.08214074699935736
+  runtime_s: 0.08741275899956236
   solver: fista
   val_mae: 20005.69724356788
   val_mse: 911144802.0004897
@@ -18,7 +18,7 @@ adaptive_lasso_ista:
   max_outer_iter: null
   method: adaptive_lasso
   nnz: 283
-  runtime_s: 0.0803796689997398
+  runtime_s: 0.08528513700002804
   solver: ista
   val_mae: 19941.680896738773
   val_mse: 911448799.4500475
@@ -30,7 +30,7 @@ dynamic_reweighted_lasso_fista:
   max_outer_iter: 5
   method: dynamic_reweighted_lasso
   nnz: 92
-  runtime_s: 0.2017897259993333
+  runtime_s: 0.21885695699984353
   solver: fista
   val_mae: 18380.577001892663
   val_mse: 798430563.0702212
@@ -42,7 +42,7 @@ dynamic_reweighted_lasso_ista:
   max_outer_iter: 5
   method: dynamic_reweighted_lasso
   nnz: 99
-  runtime_s: 0.19755038899893407
+  runtime_s: 0.21614625900110696
   solver: ista
   val_mae: 18090.045098907256
   val_mse: 778965140.9490047

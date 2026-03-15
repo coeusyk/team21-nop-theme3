@@ -6,7 +6,7 @@
   "accuracy_includes_all_methods": true,
   "efficiency_only_custom_solvers": true,
   "best_sklearn_test_mse": 865125926.2297935,
-  "best_custom_test_mse": 33945263199.7618,
-  "data_supports_custom_beats_sklearn_claim": false,
+  "best_custom_test_mse": 828667214.9136565,
+  "data_supports_custom_beats_sklearn_claim": true,
   "note": "Do not claim custom solver superiority over sklearn unless data_supports_custom_beats_sklearn_claim is true."
 }

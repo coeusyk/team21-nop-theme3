@@ -20,12 +20,14 @@
 \usepackage{algorithm}
 \usepackage{algpseudocode}
 \usepackage{natbib}
+\usepackage{doi}
 \usepackage{setspace}
 \usepackage{parskip}
 \usepackage{microtype}
 \usepackage{enumitem}
 \usepackage{titlesec}
 \usepackage{csvsimple}
+\usepackage{siunitx}
 
 % ── Hyperref setup ─────────────────────────────────────────────────────────────
 \hypersetup{
@@ -43,6 +45,14 @@
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\norm}[1]{\left\|#1\right\|}
 \newcommand{\abs}[1]{\left|#1\right|}
+\newcommand{\csvtablepath}[1]{\IfFileExists{outputs/tables/#1}{outputs/tables/#1}{../outputs/tables/#1}}
+\graphicspath{{outputs/figures/}{../outputs/figures/}}
+
+% Compact numeric rendering to avoid table overflow.
+\newcommand{\fmtpred}[1]{\num[round-mode=places,round-precision=2,group-separator={}]{#1}}
+\newcommand{\fmtjac}[1]{\num[round-mode=places,round-precision=4,group-separator={}]{#1}}
+
+
 
 % ── Theorem environments ───────────────────────────────────────────────────────
 \newtheorem{remark}{Remark}
@@ -480,17 +490,18 @@ the training matrix.
 \centering
 \caption{Predictive performance and sparsity loaded from \texttt{full\_comparison\_table.csv}.}
 \label{tab:results}
-\small
-\csvreader[
-    tabular=llllll,
-    table head=\toprule
-    \textbf{Method} & \textbf{Val MSE} & \textbf{Test MSE} & \textbf{Test MAE} & \textbf{Non-zeros} & \textbf{Runtime (s)}\\\midrule,
-    table foot=\\\bottomrule,
-    head to column names,
-    late after line=\\
-]{full_comparison_table.csv}{}{
-    \texttt{\detokenize{\method}} & \val_mse & \test_mse & \test_mae & \nnz & \runtime_s
-}
+\scriptsize
+\begin{tabular}{llrrrr}
+\toprule
+\textbf{Method} & \textbf{Val MSE} & \textbf{Test MSE} & \textbf{Test MAE} & \textbf{Non-zeros} & \textbf{Runtime (s)}\\
+\midrule
+Ridge & \fmtpred{787378459.1835155} & \fmtpred{865125926.2297935} & \fmtpred{18647.05160813634} & 283 & \fmtpred{0.0240332759994998}\\
+LASSO & \fmtpred{895357083.9040277} & \fmtpred{894021355.3213253} & \fmtpred{19470.818271987737} & 240 & \fmtpred{3.26278962699962}\\
+Adaptive LASSO & \fmtpred{911144802.0004896} & \fmtpred{894529896.3746411} & \fmtpred{19505.95387464254} & 282 & \fmtpred{0.0855895559998316}\\
+Dynamic IRL1-ISTA & \fmtpred{778965140.9490047} & \fmtpred{830975941.2048745} & \fmtpred{18186.17699240722} & 99 & \fmtpred{0.2207678519989713}\\
+Dynamic IRL1-FISTA & \fmtpred{798430563.0702212} & \fmtpred{828667214.9136565} & \fmtpred{17935.6266319796} & 92 & \fmtpred{0.23186815900135116}\\
+\bottomrule
+\end{tabular}
 \end{table}
 
 Observed findings:
@@ -543,16 +554,17 @@ the much denser static baselines (about 282--283 non-zeros).
 \caption{Feature selection stability loaded from \texttt{stability\_table.csv}.}
 \label{tab:stability}
 \small
-\csvreader[
-    tabular=lll,
-    table head=\toprule
-    \textbf{Method} & \textbf{Mean Jaccard} & \textbf{Std Jaccard}\\\midrule,
-    table foot=\\\bottomrule,
-    head to column names,
-    late after line=\\
-]{stability_table.csv}{}{
-    \texttt{\detokenize{\method}} & \mean_jaccard & \std_jaccard
-}
+\begin{tabular}{lll}
+\toprule
+\textbf{Method} & \textbf{Mean Jaccard} & \textbf{Std Jaccard}\\
+\midrule
+Adaptive LASSO & \fmtjac{0.9872590676518671} & \fmtjac{0.004247102980061563}\\
+Dynamic IRL1-FISTA & \fmtjac{0.27212512052234733} & \fmtjac{0.06365032019481207}\\
+Dynamic IRL1-ISTA & \fmtjac{0.29228725039449693} & \fmtjac{0.06936056701059536}\\
+LASSO & \fmtjac{0.7689303986240856} & \fmtjac{0.018696599399045923}\\
+Ridge & \fmtjac{0.9957572112372504} & \fmtjac{0.002643615727941471}\\
+\bottomrule
+\end{tabular}
 \end{table}
 
 The stability profile shows a trade-off: dynamic IRL1-PG improves sparsity and test
@@ -578,17 +590,22 @@ determinants of sale price in the selected sparse model.
 \caption{Top 10 feature effects loaded from \texttt{t20\_feature\_interpretation.csv}.}
 \label{tab:feature-interpretation}
 \small
-\csvreader[
-    tabular=llll,
-    table head=\toprule
-    \textbf{Feature} & \textbf{Coefficient} & \textbf{Direction} & \textbf{Interpretation}\\\midrule,
-    table foot=\\\bottomrule,
-    head to column names,
-    late after line=\\,
-    filter test=\ifnum\thecsvinputline<12\relax
-]{t20_feature_interpretation.csv}{}{
-    \texttt{\detokenize{\feature}} & \coefficient & \direction & \interpretation
-}
+\begin{tabular}{lllp{0.45\textwidth}}
+\toprule
+\textbf{Feature} & \textbf{Coefficient} & \textbf{Direction} & \textbf{Interpretation}\\
+\midrule
+\nolinkurl{GrLivArea} & \fmtpred{29348.335138492323} & positive & Size-related feature: larger usable space generally increases price.\\
+\nolinkurl{RoofMatl_ClyTile} & \fmtpred{-21052.55427231648} & negative & General structural/categorical feature that appears to decreases price.\\
+\nolinkurl{Condition2_PosN} & \fmtpred{-9516.546793622965} & negative & Quality/condition proxy: better values typically decreases price.\\
+\nolinkurl{GarageQual_Ex} & \fmtpred{9370.23493013163} & positive & Quality/condition proxy: better values typically increases price.\\
+\nolinkurl{YearBuilt} & \fmtpred{8778.704864139238} & positive & Age/renovation signal: newer or renovated homes usually increases price.\\
+\nolinkurl{BsmtQual_Ex} & \fmtpred{8553.764965365015} & positive & Quality/condition proxy: better values typically increases price.\\
+\nolinkurl{OverallQual} & \fmtpred{8356.406808781141} & positive & Quality/condition proxy: better values typically increases price.\\
+\nolinkurl{PoolArea} & \fmtpred{7508.558553473916} & positive & Size-related feature: larger usable space generally increases price.\\
+\nolinkurl{GarageCond_Ex} & \fmtpred{-7325.706256396033} & negative & Quality/condition proxy: better values typically decreases price.\\
+\nolinkurl{BsmtFinSF1} & \fmtpred{6571.54042063932} & positive & Size-related feature: larger usable space generally increases price.\\
+\bottomrule
+\end{tabular}
 \end{table}
 
 % ══════════════════════════════════════════════════════════════════════════════

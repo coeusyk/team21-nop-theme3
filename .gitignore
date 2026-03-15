@@ -17,3 +17,12 @@ kaggle.json
 
 # Dataset
 data/
+
+# Tex log files
+*.log
+*.aux
+*.out
+*.toc
+*.lof
+*.lot
+*.fls
